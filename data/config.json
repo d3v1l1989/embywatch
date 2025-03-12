@@ -1,0 +1,49 @@
+{
+    "dashboard": {
+        "name": "Your Plex Dashboard",
+        "icon_url": "https://example.com/icon.png",
+        "footer_icon_url": "https://example.com/icon.png"
+    },
+    "plex_sections": {
+        "show_all": false,
+        "sections": {
+            "Movies": {
+                "display_name": "Movies",
+                "emoji": "🎥",
+                "show_episodes": false
+            },
+            "Shows": {
+                "display_name": "Shows",
+                "emoji": "📺",
+                "show_episodes": true
+            },
+            "Documentaries": {
+                "display_name": "Documentaries",
+                "emoji": "📚",
+                "show_episodes": false
+            }
+        }
+    },
+    "presence": {
+        "sections": [
+            {
+                "section_title": "Movies",
+                "display_name": "Movies",
+                "emoji": "🎥"
+            },
+            {
+                "section_title": "Shows",
+                "display_name": "Shows",
+                "emoji": "📺"
+            }
+        ],
+        "offline_text": "🔴 Server Offline!",
+        "stream_text": "{count} active Stream{s} 🟢"
+    },
+    "cache": {
+        "library_update_interval": 900
+    },
+    "sabnzbd": {
+        "keywords": ["AC3", "DL", "German", "1080p", "2160p", "4K", "GERMAN", "English"]
+    }
+}
