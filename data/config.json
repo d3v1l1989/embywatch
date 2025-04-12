@@ -1,42 +1,15 @@
 {
     "dashboard": {
-        "name": "Your Plex Dashboard",
-        "icon_url": "https://example.com/icon.png",
-        "footer_icon_url": "https://example.com/icon.png"
+        "name": "Your Jellyfin Dashboard",
+        "icon_url": "",
+        "footer_icon_url": ""
     },
-    "plex_sections": {
-        "show_all": false,
-        "sections": {
-            "Movies": {
-                "display_name": "Movies",
-                "emoji": "🎥",
-                "show_episodes": false
-            },
-            "Shows": {
-                "display_name": "Shows",
-                "emoji": "📺",
-                "show_episodes": true
-            },
-            "Documentaries": {
-                "display_name": "Documentaries",
-                "emoji": "📚",
-                "show_episodes": false
-            }
-        }
+    "jellyfin_sections": {
+        "show_all": true,
+        "sections": {}
     },
     "presence": {
-        "sections": [
-            {
-                "section_title": "Movies",
-                "display_name": "Movies",
-                "emoji": "🎥"
-            },
-            {
-                "section_title": "Shows",
-                "display_name": "Shows",
-                "emoji": "📺"
-            }
-        ],
+        "sections": [],
         "offline_text": "🔴 Server Offline!",
         "stream_text": "{count} active Stream{s} 🟢"
     },

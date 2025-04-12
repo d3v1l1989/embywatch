@@ -15,7 +15,7 @@ if not RUNNING_IN_DOCKER:
 class SABnzbd(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.logger = logging.getLogger("plexwatch_bot.sabnzbd")
+        self.logger = logging.getLogger("jellywatch_bot.sabnzbd")
         self.SABNZBD_URL = os.getenv("SABNZBD_URL")
         self.SABNZBD_API_KEY = os.getenv("SABNZBD_API_KEY")
 

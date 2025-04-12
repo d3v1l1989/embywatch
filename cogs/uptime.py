@@ -13,7 +13,7 @@ if not RUNNING_IN_DOCKER:
 class Uptime(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.logger = logging.getLogger("plexwatch_bot.uptime")
+        self.logger = logging.getLogger("jellywatch_bot.uptime")
         self.api_url = os.getenv("UPTIME_URL")
         self.username = os.getenv("UPTIME_USERNAME")
         self.password = os.getenv("UPTIME_PASSWORD")
