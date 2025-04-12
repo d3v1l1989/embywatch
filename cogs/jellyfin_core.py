@@ -358,12 +358,18 @@ class JellyfinCore(commands.Cog):
                     series_count = sum(1 for item in items["Items"] if item["Type"] == "Series")
                     episode_count = sum(1 for item in items["Items"] if item["Type"] == "Episode")
 
-                    stats[library_id] = {
+                    # Create base stats dictionary
+                    library_stats = {
                         "count": movie_count + series_count,
-                        "episodes": episode_count if config.get("show_episodes", False) else None,  # Set to None if episodes are hidden
                         "display_name": config.get("display_name", library.get("Name", "Unknown Library")),
                         "emoji": emoji
                     }
+
+                    # Only add episodes if show_episodes is True
+                    if config.get("show_episodes", False):
+                        library_stats["episodes"] = episode_count
+
+                    stats[library_id] = library_stats
                 else:
                     self.logger.error(f"Failed to get items for library {library_name}: HTTP {items_response.status_code}")
 
@@ -523,8 +529,9 @@ class JellyfinCore(commands.Cog):
                 if stats.get('count', 0) > 0:  # Only show libraries with items
                     stats_text += f"{stats.get('emoji', '📁')} **{stats.get('display_name', 'Unknown Library')}**\n"
                     stats_text += f"```css\nTotal Items: {stats.get('count', 0)}\n```\n"
-                    if stats.get('episodes') is not None:  # Only show episodes if not None
-                        stats_text += f"```css\nEpisodes: {stats.get('episodes', 0)}\n```\n"
+                    # Only show episodes if the key exists in the stats
+                    if 'episodes' in stats:
+                        stats_text += f"```css\nEpisodes: {stats['episodes']}\n```\n"
             if stats_text:  # Only add the field if there are libraries to show
                 embed.add_field(
                     name="Library Statistics",
@@ -642,16 +649,33 @@ class JellyfinCore(commands.Cog):
         try:
             # Get current state from any library (they should all be the same)
             current_state = False
-            if self.config["jellyfin_sections"]["sections"]:
-                first_library = next(iter(self.config["jellyfin_sections"]["sections"].values()))
-                current_state = first_library.get("show_episodes", False)
+            sections = self.config["jellyfin_sections"]["sections"]
+            
+            if not sections:
+                await interaction.followup.send(
+                    "⚠️ No libraries are configured yet. Please use `/update_libraries` first.",
+                    ephemeral=True
+                )
+                return
+                
+            first_library = next(iter(sections.values()))
+            current_state = first_library.get("show_episodes", False)
+            
+            # Log the current state
+            self.logger.info(f"Current show_episodes state: {current_state}")
             
             # Toggle the show_episodes setting for all libraries
-            for library_id in self.config["jellyfin_sections"]["sections"]:
-                self.config["jellyfin_sections"]["sections"][library_id]["show_episodes"] = not current_state
+            new_state = not current_state
+            for library_id, library_config in sections.items():
+                library_config["show_episodes"] = new_state
+                self.logger.info(f"Updated library {library_id} show_episodes to {new_state}")
             
             # Save the updated config
             self.save_config()
+            
+            # Clear the library cache and force a refresh
+            self.library_cache = {}
+            self.last_library_update = None
             
             # Get server info and update dashboard
             info = await self.get_server_info()
@@ -660,7 +684,7 @@ class JellyfinCore(commands.Cog):
             await self._update_dashboard_message(channel, embed)
             
             await interaction.followup.send(
-                f"✅ Episode numbers display has been {'enabled' if not current_state else 'disabled'}!",
+                f"✅ Episode numbers display has been {'enabled' if new_state else 'disabled'}!",
                 ephemeral=True
             )
             
