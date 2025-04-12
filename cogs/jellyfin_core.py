@@ -255,7 +255,7 @@ class JellyfinCore(commands.Cog):
             
             # Get sessions
             sessions = self.get_sessions()
-            current_streams = len(sessions) if sessions else 0
+            current_streams = len([s for s in sessions if s.get("NowPlayingItem")]) if sessions else 0
 
             # Get library stats
             library_stats = self.get_library_stats()
