@@ -82,10 +82,14 @@ services:
     image: ghcr.io/d3v1l1989/jellyfinwatch:latest
     container_name: jellywatch
     restart: unless-stopped
+    user: "1000:1000"
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - JELLYFIN_URL=${JELLYFIN_URL}
       - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
+      - JELLYFIN_USERNAME=${JELLYFIN_USERNAME}
+      - JELLYFIN_PASSWORD=${JELLYFIN_PASSWORD}
+      - CHANNEL_ID=${CHANNEL_ID}
       - DISCORD_AUTHORIZED_USERS=${DISCORD_AUTHORIZED_USERS}
       - RUNNING_IN_DOCKER=true
     volumes:
@@ -118,48 +122,9 @@ The bot uses a `.env` file for configuration. Here are the available options:
 - `DISCORD_TOKEN`: Your Discord bot token
 - `JELLYFIN_URL`: Your Jellyfin server URL
 - `JELLYFIN_API_KEY`: Your Jellyfin API key
+- `JELLYFIN_USERNAME`: Your Jellyfin username
+- `JELLYFIN_PASSWORD`: Your Jellyfin password
+- `CHANNEL_ID`: The Discord channel ID where the dashboard will be displayed
 - `DISCORD_AUTHORIZED_USERS`: Comma-separated list of Discord user IDs authorized to use admin commands
 
 ## 🤖 Commands
-
-### Admin Commands
-- `/update_libraries` - Update library sections in the dashboard
-- `/episodes` - Toggle display of episode counts in library stats
-- `/refresh` - Refresh the dashboard embed immediately
-- `/sync` - Sync slash commands with Discord
-- `/load` - Load a specific cog (admin only)
-- `/unload` - Unload a specific cog (admin only)
-- `/reload` - Reload a specific cog (admin only)
-- `/cogs` - List all available cogs
-
-## 🎨 Dashboard Features
-
-The dashboard provides a comprehensive overview of your Jellyfin server:
-
-- Server status and version
-- System information (CPU, memory, disk usage)
-- Library statistics with customizable display options
-- Currently playing content
-- Active user sessions
-- Beautiful embed design with Jellyfin branding
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 💖 Support
-
-If this bot has helped you, consider supporting my work! Your support helps me maintain and improve this project.
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/d3v1l1989)
-
-## 🙏 Acknowledgments
-
-- [Jellyfin](https://jellyfin.org/) for the amazing media server
-- [Discord.py](https://discordpy.readthedocs.io/) for the Discord API wrapper
-- [nichtlegacy](https://github.com/nichtlegacy) for the original [PlexWatch](https://github.com/nichtlegacy/PlexWatch) project that inspired this bot
-- All contributors and users of this bot
