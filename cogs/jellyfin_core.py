@@ -505,40 +505,51 @@ class JellyfinCore(commands.Cog):
         embed.add_field(
             name="Server Status",
             value=f"{status}\nUptime: {uptime}",
-            inline=False
+            inline=True
         )
-        
-        # Add server info
-        embed.add_field(
-            name="Server Info",
-            value=f"Version: {info.get('version', 'Unknown')}\nOS: {info.get('operating_system', 'Unknown')}",
-            inline=False
-        )
-        
-        # Add library statistics
-        library_stats = info.get('library_stats', {})
-        if library_stats:
-            stats_text = ""
-            for library_id, stats in library_stats.items():
-                stats_text += f"{stats.get('emoji', '📁')} **{stats.get('display_name', 'Unknown Library')}**\n"
-                stats_text += f"```css\nTotal Items: {stats.get('count', 0)}\n```\n"
-                if stats.get('show_episodes', False):
-                    stats_text += f"```css\nEpisodes: {stats.get('episodes', 0)}\n```\n"
-                if stats.get('size'):
-                    stats_text += f"```css\nSize: {stats.get('size')}\n```\n"
-            embed.add_field(
-                name="Library Statistics",
-                value=stats_text,
-                inline=False
-            )
         
         # Add active streams
         current_streams = info.get('current_streams', 0)
         embed.add_field(
             name="Active Streams",
             value=f"```css\n{current_streams} active stream{'s' if current_streams != 1 else ''}\n```",
-            inline=False
+            inline=True
         )
+        
+        # Add library statistics
+        library_stats = info.get('library_stats', {})
+        if library_stats:
+            # Create two columns for libraries
+            left_column = ""
+            right_column = ""
+            libraries = list(library_stats.items())
+            half = (len(libraries) + 1) // 2
+            
+            for i, (library_id, stats) in enumerate(libraries):
+                library_text = f"{stats.get('emoji', '📁')} **{stats.get('display_name', 'Unknown Library')}**\n"
+                library_text += f"```css\nTotal Items: {stats.get('count', 0)}\n```\n"
+                if stats.get('show_episodes', False):
+                    library_text += f"```css\nEpisodes: {stats.get('episodes', 0)}\n```\n"
+                if stats.get('size'):
+                    library_text += f"```css\nSize: {stats.get('size')}\n```\n"
+                
+                if i < half:
+                    left_column += library_text
+                else:
+                    right_column += library_text
+            
+            embed.add_field(
+                name="Library Statistics",
+                value=left_column,
+                inline=True
+            )
+            
+            if right_column:  # Only add right column if there are libraries to show
+                embed.add_field(
+                    name="\u200b",  # Empty name for spacing
+                    value=right_column,
+                    inline=True
+                )
         
         # Set footer with JellyfinWatch branding
         embed.set_footer(
@@ -609,7 +620,7 @@ class JellyfinCore(commands.Cog):
                 library_id = library.get("ItemId")
                 
                 # Find matching emoji based on library name
-                emoji = LIBRARY_EMOJIS["default"]  # Default emoji
+                emoji = LIBRARY_EMOJIS["default"]
                 for key, value in LIBRARY_EMOJIS.items():
                     if key in library_name:
                         emoji = value
@@ -617,7 +628,7 @@ class JellyfinCore(commands.Cog):
                 
                 self.config["jellyfin_sections"]["sections"][library_id] = {
                     "display_name": library.get("Name", "Unknown Library"),
-                    "emoji": emoji,
+                    "emoji": emoji,  # Use the found emoji
                     "color": "#00A4DC",  # Default color
                     "show_episodes": True if any(keyword in library_name for keyword in ["tv", "television", "shows", "series", "anime"]) else False
                 }
