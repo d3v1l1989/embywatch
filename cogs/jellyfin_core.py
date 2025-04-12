@@ -190,22 +190,97 @@ class JellyfinCore(commands.Cog):
             self.jellyfin_start_time = None
             return False
 
-    def get_server_info(self) -> Dict[str, Any]:
-        """Retrieve current Jellyfin server status and statistics."""
-        if not self.connect_to_jellyfin():
-            return self.get_offline_info()
+    async def get_server_info(self) -> Dict[str, Any]:
+        """Get server information from Jellyfin."""
         try:
-            self.offline_since = None
+            if not self.connect_to_jellyfin():
+                return {
+                    "status": "🔴 Offline",
+                    "uptime": "N/A",
+                    "library_stats": {},
+                    "active_users": []
+                }
+
+            headers = {
+                "X-Emby-Token": self.JELLYFIN_API_KEY,
+                "X-Emby-Client": "JellyWatch",
+                "X-Emby-Client-Version": "1.0.0",
+                "X-Emby-Device-Name": "JellyWatch",
+                "X-Emby-Device-Id": "jellywatch-bot",
+                "Accept": "application/json",
+                "X-Emby-Authorization": "MediaBrowser Client=\"JellyWatch\", Device=\"JellyWatch\", DeviceId=\"jellywatch-bot\", Version=\"1.0.0\""
+            }
+
+            # Get server status
+            response = requests.get(f"{self.JELLYFIN_URL}/System/Info", headers=headers)
+            if response.status_code != 200:
+                return {
+                    "status": "🔴 Offline",
+                    "uptime": "N/A",
+                    "library_stats": {},
+                    "active_users": []
+                }
+
+            server_info = response.json()
+            uptime = server_info.get("ServerTime", "")
+            if uptime:
+                uptime = datetime.fromisoformat(uptime.replace("Z", "+00:00")).strftime("%Y-%m-%d %H:%M:%S")
+
+            # Get library statistics
+            library_stats = {}
+            for section_id, section in self.config["jellyfin_sections"]["sections"].items():
+                response = requests.get(
+                    f"{self.JELLYFIN_URL}/Items/Counts",
+                    headers=headers,
+                    params={"ParentId": section_id}
+                )
+                if response.status_code == 200:
+                    counts = response.json()
+                    library_stats[section_id] = {
+                        "display_name": section["display_name"],
+                        "emoji": section["emoji"],
+                        "count": counts.get("MovieCount", 0) + counts.get("SeriesCount", 0) + counts.get("EpisodeCount", 0),
+                        "episodes": counts.get("EpisodeCount", 0),
+                        "show_episodes": section.get("show_episodes", False),
+                        "size": self._format_size(counts.get("TotalFileSize", 0))
+                    }
+
+            # Get active streams
+            response = requests.get(f"{self.JELLYFIN_URL}/Sessions", headers=headers)
+            active_users = []
+            if response.status_code == 200:
+                sessions = response.json()
+                for session in sessions:
+                    if session.get("NowPlayingItem"):
+                        user = session.get("UserName", "Unknown User")
+                        title = session["NowPlayingItem"].get("Name", "Unknown Title")
+                        player = session.get("Client", "Unknown Player")
+                        progress = (session.get("PlayState", {}).get("PositionTicks", 0) / 
+                                 session["NowPlayingItem"].get("RunTimeTicks", 1)) * 100
+                        quality = session.get("PlayState", {}).get("PlayMethod", "Unknown Quality")
+                        
+                        stream_info = (
+                            f"**{title}**\n"
+                            f"📱 {player}\n"
+                            f"📊 {progress:.1f}% | {quality}"
+                        )
+                        active_users.append(stream_info)
+
             return {
                 "status": "🟢 Online",
-                "uptime": self.calculate_uptime(),
-                "library_stats": self.get_library_stats(),
-                "active_users": self.get_active_streams(),
-                "current_streams": self.get_sessions(),
+                "uptime": uptime,
+                "library_stats": library_stats,
+                "active_users": active_users
             }
+
         except Exception as e:
-            self.logger.error(f"Error retrieving server info: {e}")
-            return self.get_offline_info()
+            self.logger.error(f"Error getting server info: {e}")
+            return {
+                "status": "🔴 Error",
+                "uptime": "N/A",
+                "library_stats": {},
+                "active_users": []
+            }
 
     def calculate_uptime(self) -> str:
         """Calculate Jellyfin server uptime as a formatted string."""
@@ -412,7 +487,7 @@ class JellyfinCore(commands.Cog):
     async def update_status(self) -> None:
         """Update the bot's status with Jellyfin information."""
         try:
-            info = self.get_server_info()
+            info = await self.get_server_info()
             if info["status"] == "🟢 Online":
                 streams = len(info["current_streams"])
                 presence_text = self.config["presence"]["stream_text"].format(
@@ -435,7 +510,7 @@ class JellyfinCore(commands.Cog):
                 self.logger.error(f"Channel {self.CHANNEL_ID} not found")
                 return
 
-            info = self.get_server_info()
+            info = await self.get_server_info()
             embed = await self.create_dashboard_embed(info)
             await self._update_dashboard_message(channel, embed)
         except Exception as e:
