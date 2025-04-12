@@ -415,8 +415,28 @@ class JellyfinCore(commands.Cog):
 
     async def create_dashboard_embed(self, info: Dict[str, Any]) -> discord.Embed:
         """Create a Discord embed with Jellyfin information."""
+        # Get server name from Jellyfin
+        server_name = "Jellyfin Server"
+        try:
+            if self.connect_to_jellyfin():
+                headers = {
+                    "X-Emby-Token": self.JELLYFIN_API_KEY,
+                    "X-Emby-Client": "JellyWatch",
+                    "X-Emby-Client-Version": "1.0.0",
+                    "X-Emby-Device-Name": "JellyWatch",
+                    "X-Emby-Device-Id": "jellywatch-bot",
+                    "Accept": "application/json",
+                    "X-Emby-Authorization": "MediaBrowser Client=\"JellyWatch\", Device=\"JellyWatch\", DeviceId=\"jellywatch-bot\", Version=\"1.0.0\""
+                }
+                response = requests.get(f"{self.JELLYFIN_URL}/System/Info", headers=headers)
+                if response.status_code == 200:
+                    server_info = response.json()
+                    server_name = server_info.get("ServerName", "Jellyfin Server")
+        except Exception as e:
+            self.logger.error(f"Failed to get server name: {e}")
+
         embed = discord.Embed(
-            title=self.config["dashboard"]["name"],
+            title=f"{server_name} Dashboard",
             color=discord.Color.green() if info["status"] == "🟢 Online" else discord.Color.red()
         )
         
@@ -444,32 +464,41 @@ class JellyfinCore(commands.Cog):
             inline=False
         )
 
-        # Library Statistics
-        library_stats = []
+        # Library Statistics - One field per library
         for section, stats in info["library_stats"].items():
-            stat_text = f"{stats['emoji']} {stats['display_name']}: {stats['count']}"
+            # Get the color from config or use default
+            color = self.config["jellyfin_sections"]["sections"].get(section, {}).get("color", "#00A4DC")
+            # Convert hex color to discord.Color
+            color = discord.Color.from_str(color)
+            
+            # Create a rich field for each library
+            stat_text = f"{stats['emoji']} **{stats['display_name']}**\n"
+            stat_text += f"• Total Items: {stats['count']}\n"
             if stats["show_episodes"] and stats["episodes"] > 0:
-                stat_text += f" ({stats['episodes']} episodes)"
-            library_stats.append(stat_text)
-        
-        if library_stats:
+                stat_text += f"• Episodes: {stats['episodes']}\n"
+            if stats.get("size", 0) > 0:
+                stat_text += f"• Size: {stats['size']}\n"
+            
             embed.add_field(
-                name="Library Statistics",
-                value="\n".join(library_stats),
-                inline=False
+                name="\u200b",  # Empty name for spacing
+                value=stat_text,
+                inline=True
             )
 
         # Active Streams
         if info["active_users"]:
+            streams_text = "**Active Streams**\n"
+            for stream in info["active_users"]:
+                streams_text += f"• {stream}\n"
             embed.add_field(
-                name="Active Streams",
-                value="\n".join(info["active_users"]),
+                name="\u200b",  # Empty name for spacing
+                value=streams_text,
                 inline=False
             )
         else:
             embed.add_field(
-                name="Active Streams",
-                value="No active streams",
+                name="\u200b",  # Empty name for spacing
+                value="**Active Streams**\nNo active streams",
                 inline=False
             )
 
