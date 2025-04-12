@@ -10,6 +10,35 @@ from typing import Optional, Dict, Any, List
 from dotenv import load_dotenv
 from discord import app_commands
 from main import is_authorized
+import asyncio
+
+# Library name to emoji mapping
+LIBRARY_EMOJIS = {
+    "movies": "🎬",
+    "movie": "🎬",
+    "films": "🎬",
+    "tv": "📺",
+    "television": "📺",
+    "shows": "📺",
+    "series": "📺",
+    "music": "🎵",
+    "songs": "🎵",
+    "books": "📚",
+    "audiobooks": "📚",
+    "photos": "📸",
+    "pictures": "📸",
+    "images": "📸",
+    "home videos": "🎥",
+    "videos": "🎥",
+    "anime": "🎎",
+    "cartoons": "🎎",
+    "documentaries": "📽️",
+    "docs": "📽️",
+    "kids": "👶",
+    "children": "👶",
+    "family": "👶",
+    "default": "📁"  # Default emoji for unmatched libraries
+}
 
 RUNNING_IN_DOCKER = os.getenv("RUNNING_IN_DOCKER", "false").lower() == "true"
 
@@ -504,17 +533,18 @@ class JellyfinCore(commands.Cog):
         except Exception as e:
             self.logger.error(f"Error updating dashboard message: {e}")
 
-    @app_commands.command(name="update_libraries", description="Update config.json with current Jellyfin libraries")
+    @app_commands.command(name="update_libraries", description="Update library sections in the dashboard")
     @app_commands.check(is_authorized)
-    async def update_libraries(self, interaction: discord.Interaction) -> None:
-        """Update the config.json file with current Jellyfin libraries."""
+    async def update_libraries(self, interaction: discord.Interaction):
+        """Update library sections in the dashboard."""
         await interaction.response.defer(ephemeral=True)
         
         try:
             if not self.connect_to_jellyfin():
-                await interaction.followup.send("❌ Failed to connect to Jellyfin server.")
+                await interaction.followup.send("❌ Failed to connect to Jellyfin server.", ephemeral=True)
                 return
 
+            # Get all libraries
             headers = {
                 "X-Emby-Token": self.JELLYFIN_API_KEY,
                 "X-Emby-Client": "JellyWatch",
@@ -527,63 +557,47 @@ class JellyfinCore(commands.Cog):
             
             response = requests.get(f"{self.JELLYFIN_URL}/Library/VirtualFolders", headers=headers)
             if response.status_code != 200:
-                await interaction.followup.send(f"❌ Failed to get library folders: HTTP {response.status_code}")
+                await interaction.followup.send("❌ Failed to fetch libraries from Jellyfin.", ephemeral=True)
                 return
 
             libraries = response.json()
-            current_config = self._load_config()
             
-            # Default emojis for different library types
-            default_emojis = {
-                "movie": "🎥",
-                "tvshow": "📺",
-                "music": "🎵",
-                "documentary": "📚",
-                "anime": "🎌",
-                "default": "🎬"
-            }
-
-            # Update sections in config
-            sections = {}
+            # Update config with new libraries
+            self.config["jellyfin_sections"]["sections"] = {}
+            
             for library in libraries:
-                name = library["Name"]
-                # Try to determine library type from name
-                library_type = "default"
-                if any(keyword in name.lower() for keyword in ["movie", "film"]):
-                    library_type = "movie"
-                elif any(keyword in name.lower() for keyword in ["tv", "show", "series"]):
-                    library_type = "tvshow"
-                elif any(keyword in name.lower() for keyword in ["music", "song"]):
-                    library_type = "music"
-                elif any(keyword in name.lower() for keyword in ["documentary", "doc"]):
-                    library_type = "documentary"
-                elif any(keyword in name.lower() for keyword in ["anime", "cartoon"]):
-                    library_type = "anime"
-
-                # Use existing config if available, otherwise create new
-                existing_config = current_config["jellyfin_sections"]["sections"].get(name, {})
-                sections[name] = {
-                    "display_name": existing_config.get("display_name", name),
-                    "emoji": existing_config.get("emoji", default_emojis[library_type]),
-                    "show_episodes": existing_config.get("show_episodes", library_type in ["tvshow", "anime"]),
-                    "color": existing_config.get("color", "#00A4DC")  # Default Jellyfin blue
+                library_name = library.get("Name", "").lower()
+                library_id = library.get("ItemId")
+                
+                # Find matching emoji based on library name
+                emoji = LIBRARY_EMOJIS["default"]  # Default emoji
+                for key, value in LIBRARY_EMOJIS.items():
+                    if key in library_name:
+                        emoji = value
+                        break
+                
+                self.config["jellyfin_sections"]["sections"][library_id] = {
+                    "display_name": library.get("Name", "Unknown Library"),
+                    "emoji": emoji,
+                    "color": "#00A4DC",  # Default color
+                    "show_episodes": True if any(keyword in library_name for keyword in ["tv", "television", "shows", "series", "anime"]) else False
                 }
 
-            # Update config
-            current_config["jellyfin_sections"]["sections"] = sections
-            current_config["jellyfin_sections"]["show_all"] = False
-
             # Save updated config
-            with open(self.CONFIG_FILE, "w", encoding="utf-8") as f:
-                json.dump(current_config, f, indent=4)
-
-            # Reload config
-            self.config = self._load_config()
-
-            await interaction.followup.send("✅ Successfully updated library configuration!")
+            self.save_config()
+            
+            # Send initial success message
+            await interaction.followup.send("✅ Libraries updated successfully! Refreshing dashboard in 10 seconds...", ephemeral=True)
+            
+            # Wait 10 seconds
+            await asyncio.sleep(10)
+            
+            # Update dashboard after waiting
+            await self._update_dashboard_message()
+            
         except Exception as e:
             self.logger.error(f"Error updating libraries: {e}")
-            await interaction.followup.send(f"❌ Error updating libraries: {e}")
+            await interaction.followup.send(f"❌ Error updating libraries: {str(e)}", ephemeral=True)
 
 async def setup(bot: commands.Bot) -> None:
     """Add the JellyfinCore cog to the bot."""
