@@ -339,12 +339,11 @@ class JellyfinCore(commands.Cog):
                         emoji = value
                         break
 
-                # Get item counts and size
+                # Get item counts
                 params = {
                     "ParentId": library_id,
                     "Recursive": True,
-                    "IncludeItemTypes": "Movie,Series,Episode",
-                    "Fields": "Size"  # Include size information
+                    "IncludeItemTypes": "Movie,Series,Episode"
                 }
                 items_response = requests.get(
                     f"{self.JELLYFIN_URL}/Items",
@@ -357,20 +356,13 @@ class JellyfinCore(commands.Cog):
                     movie_count = sum(1 for item in items["Items"] if item["Type"] == "Movie")
                     series_count = sum(1 for item in items["Items"] if item["Type"] == "Series")
                     episode_count = sum(1 for item in items["Items"] if item["Type"] == "Episode")
-                    
-                    # Calculate total size
-                    total_size = 0
-                    for item in items["Items"]:
-                        if "Size" in item:
-                            total_size += item["Size"]
 
                     stats[library_id] = {
                         "count": movie_count + series_count,
-                        "episodes": episode_count if config["show_episodes"] else 0,
+                        "episodes": episode_count if config["show_episodes"] else None,  # Set to None if episodes are hidden
                         "display_name": config["display_name"],
                         "emoji": emoji,
-                        "show_episodes": config["show_episodes"],
-                        "size": self._format_size(total_size)
+                        "show_episodes": config["show_episodes"]
                     }
                 else:
                     self.logger.error(f"Failed to get items for library {library_name}: HTTP {items_response.status_code}")
@@ -528,15 +520,17 @@ class JellyfinCore(commands.Cog):
         if library_stats:
             stats_text = ""
             for library_id, stats in library_stats.items():
-                stats_text += f"{stats.get('emoji', '📁')} **{stats.get('display_name', 'Unknown Library')}**\n"
-                stats_text += f"```css\nTotal Items: {stats.get('count', 0)}\n```\n"
-                if stats.get('show_episodes', False):
-                    stats_text += f"```css\nEpisodes: {stats.get('episodes', 0)}\n```\n"
-            embed.add_field(
-                name="Library Statistics",
-                value=stats_text,
-                inline=False
-            )
+                if stats.get('count', 0) > 0:  # Only show libraries with items
+                    stats_text += f"{stats.get('emoji', '📁')} **{stats.get('display_name', 'Unknown Library')}**\n"
+                    stats_text += f"```css\nTotal Items: {stats.get('count', 0)}\n```\n"
+                    if stats.get('episodes') is not None:  # Only show episodes if not None
+                        stats_text += f"```css\nEpisodes: {stats.get('episodes', 0)}\n```\n"
+            if stats_text:  # Only add the field if there are libraries to show
+                embed.add_field(
+                    name="Library Statistics",
+                    value=stats_text,
+                    inline=False
+                )
         
         # Set footer with JellyfinWatch branding
         embed.set_footer(
