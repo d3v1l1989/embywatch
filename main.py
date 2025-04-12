@@ -27,7 +27,7 @@ AUTHORIZED_USERS: List[int] = [
 # Setup logging with rotation
 LOG_DIR = "logs"
 os.makedirs(LOG_DIR, exist_ok=True)
-bot_logger = logging.getLogger("plexwatch_bot")
+bot_logger = logging.getLogger("jellywatch_bot")
 bot_logger.setLevel(logging.DEBUG)
 
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -38,7 +38,7 @@ if RUNNING_IN_DOCKER:
     bot_logger.addHandler(console_handler)
 else:
     file_handler = TimedRotatingFileHandler(
-        filename=os.path.join(LOG_DIR, "plexwatch_debug.log"),
+        filename=os.path.join(LOG_DIR, "jellywatch_debug.log"),
         when="midnight",
         interval=1,
         backupCount=7,
