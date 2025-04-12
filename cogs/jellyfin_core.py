@@ -360,10 +360,9 @@ class JellyfinCore(commands.Cog):
 
                     stats[library_id] = {
                         "count": movie_count + series_count,
-                        "episodes": episode_count if config["show_episodes"] else None,  # Set to None if episodes are hidden
-                        "display_name": config["display_name"],
-                        "emoji": emoji,
-                        "show_episodes": config["show_episodes"]
+                        "episodes": episode_count if config.get("show_episodes", False) else None,  # Set to None if episodes are hidden
+                        "display_name": config.get("display_name", library.get("Name", "Unknown Library")),
+                        "emoji": emoji
                     }
                 else:
                     self.logger.error(f"Failed to get items for library {library_name}: HTTP {items_response.status_code}")
