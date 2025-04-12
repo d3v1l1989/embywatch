@@ -339,7 +339,6 @@ class JellyfinCore(commands.Cog):
             # Format stream info
             stream_info = (
                 f"**{idx}. {title}**\n"
-                f"👤 {self.user_mapping.get(user, user)}\n"
                 f"📱 {player}\n"
                 f"📊 {progress:.1f}% | {quality}"
             )
@@ -414,42 +413,23 @@ class JellyfinCore(commands.Cog):
             self.logger.error(f"Error updating dashboard: {e}")
 
     async def create_dashboard_embed(self, info: Dict[str, Any]) -> discord.Embed:
-        """Create a Discord embed with Jellyfin information."""
-        # Get server name from Jellyfin
-        server_name = "Jellyfin Server"
-        try:
-            if self.connect_to_jellyfin():
-                headers = {
-                    "X-Emby-Token": self.JELLYFIN_API_KEY,
-                    "X-Emby-Client": "JellyWatch",
-                    "X-Emby-Client-Version": "1.0.0",
-                    "X-Emby-Device-Name": "JellyWatch",
-                    "X-Emby-Device-Id": "jellywatch-bot",
-                    "Accept": "application/json",
-                    "X-Emby-Authorization": "MediaBrowser Client=\"JellyWatch\", Device=\"JellyWatch\", DeviceId=\"jellywatch-bot\", Version=\"1.0.0\""
-                }
-                response = requests.get(f"{self.JELLYFIN_URL}/System/Info", headers=headers)
-                if response.status_code == 200:
-                    server_info = response.json()
-                    server_name = server_info.get("ServerName", "Jellyfin Server")
-        except Exception as e:
-            self.logger.error(f"Failed to get server name: {e}")
-
+        """Create the dashboard embed with server information."""
         embed = discord.Embed(
-            title=f"{server_name} Dashboard",
-            color=discord.Color.green() if info["status"] == "🟢 Online" else discord.Color.red()
+            title="Jellyfin Server Dashboard",
+            description="Real-time server status and statistics",
+            color=discord.Color.blue()
         )
         
-        # Set Jellyfin logo as thumbnail (512x512 version)
-        embed.set_thumbnail(url="https://static-00.iconduck.com/assets.00/jellyfin-icon-512x512-jcuy5qbi.png")
+        # Set thumbnail to Jellyfin logo
+        embed.set_thumbnail(url="https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/icon-transparent.svg")
         
+        # Add fields
         await self._add_embed_fields(embed, info)
         
-        # Set footer with Jellyfin logo (96x96 version) and last updated time
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        # Set footer with JellyfinWatch branding
         embed.set_footer(
-            text=f"Last updated: {current_time} • Powered by Jellyfin",
-            icon_url="https://static-00.iconduck.com/assets.00/jellyfin-icon-96x96-h2vkd1yr.png"
+            text="Powered by JellyfinWatch",
+            icon_url="https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/icon-transparent.svg"
         )
         
         return embed
