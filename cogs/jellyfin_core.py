@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 from dotenv import load_dotenv
 from discord import app_commands
+from main import is_authorized
 
 RUNNING_IN_DOCKER = os.getenv("RUNNING_IN_DOCKER", "false").lower() == "true"
 
@@ -493,14 +494,11 @@ class JellyfinCore(commands.Cog):
             self.logger.error(f"Error updating dashboard message: {e}")
 
     @app_commands.command(name="update_libraries", description="Update config.json with current Jellyfin libraries")
+    @app_commands.check(is_authorized)
     async def update_libraries(self, interaction: discord.Interaction) -> None:
         """Update the config.json file with current Jellyfin libraries."""
         await interaction.response.defer(ephemeral=True)
         
-        if not is_authorized(interaction):
-            await interaction.followup.send("❌ You are not authorized to execute this command.")
-            return
-
         try:
             if not self.connect_to_jellyfin():
                 await interaction.followup.send("❌ Failed to connect to Jellyfin server.")
