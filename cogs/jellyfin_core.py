@@ -260,7 +260,8 @@ class JellyfinCore(commands.Cog):
             # Get library stats
             library_stats = self.get_library_stats()
             total_items = sum(int(stats.get("count", 0)) for stats in library_stats.values())
-            total_episodes = sum(int(stats.get("episodes", 0)) for stats in library_stats.values())
+            total_episodes = sum(int(episodes) for stats in library_stats.values() 
+                               if (episodes := stats.get("episodes")) is not None)
 
             return {
                 "server_name": system_info.get("ServerName", "Unknown Server"),
