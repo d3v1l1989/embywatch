@@ -198,16 +198,43 @@ class JellyfinCore(commands.Cog):
             self.jellyfin_start_time = None
             return False
 
+    @tasks.loop(seconds=30)
+    async def update_status(self) -> None:
+        """Update bot's status with current stream count."""
+        try:
+            sessions = self.get_sessions()
+            current_streams = len(sessions) if sessions else 0
+            activity = discord.Activity(
+                type=discord.ActivityType.watching,
+                name=f"{current_streams} stream{'s' if current_streams != 1 else ''}"
+            )
+            await self.bot.change_presence(activity=activity)
+        except Exception as e:
+            self.logger.error(f"Error updating status: {e}")
+
+    @tasks.loop(seconds=60)
+    async def update_dashboard(self) -> None:
+        """Update the dashboard message periodically."""
+        try:
+            info = await self.get_server_info()
+            if not info:
+                return
+
+            channel = self.bot.get_channel(self.CHANNEL_ID)
+            if not channel:
+                self.logger.error("Dashboard channel not found")
+                return
+
+            embed = await self.create_dashboard_embed(info)
+            await self._update_dashboard_message(channel, embed)
+        except Exception as e:
+            self.logger.error(f"Error updating dashboard: {e}")
+
     async def get_server_info(self) -> Dict[str, Any]:
         """Get server information from Jellyfin."""
         try:
             if not self.connect_to_jellyfin():
-                return {
-                    "status": "🔴 Offline",
-                    "uptime": "N/A",
-                    "library_stats": {},
-                    "active_users": []
-                }
+                return {}
 
             headers = {
                 "X-Emby-Token": self.JELLYFIN_API_KEY,
@@ -219,76 +246,34 @@ class JellyfinCore(commands.Cog):
                 "X-Emby-Authorization": "MediaBrowser Client=\"JellyWatch\", Device=\"JellyWatch\", DeviceId=\"jellywatch-bot\", Version=\"1.0.0\""
             }
 
-            # Get server status
+            # Get system info
             response = requests.get(f"{self.JELLYFIN_URL}/System/Info", headers=headers)
             if response.status_code != 200:
-                return {
-                    "status": "🔴 Offline",
-                    "uptime": "N/A",
-                    "library_stats": {},
-                    "active_users": []
-                }
+                return {}
 
-            server_info = response.json()
-            uptime = server_info.get("ServerTime", "")
-            if uptime:
-                uptime = datetime.fromisoformat(uptime.replace("Z", "+00:00")).strftime("%Y-%m-%d %H:%M:%S")
+            system_info = response.json()
+            
+            # Get sessions
+            sessions = self.get_sessions()
+            current_streams = len(sessions) if sessions else 0
 
-            # Get library statistics
-            library_stats = {}
-            for section_id, section in self.config["jellyfin_sections"]["sections"].items():
-                response = requests.get(
-                    f"{self.JELLYFIN_URL}/Items/Counts",
-                    headers=headers,
-                    params={"ParentId": section_id}
-                )
-                if response.status_code == 200:
-                    counts = response.json()
-                    library_stats[section_id] = {
-                        "display_name": section["display_name"],
-                        "emoji": section["emoji"],
-                        "count": counts.get("MovieCount", 0) + counts.get("SeriesCount", 0) + counts.get("EpisodeCount", 0),
-                        "episodes": counts.get("EpisodeCount", 0),
-                        "show_episodes": section.get("show_episodes", False),
-                        "size": self._format_size(counts.get("TotalFileSize", 0))
-                    }
-
-            # Get active streams
-            response = requests.get(f"{self.JELLYFIN_URL}/Sessions", headers=headers)
-            active_users = []
-            if response.status_code == 200:
-                sessions = response.json()
-                for session in sessions:
-                    if session.get("NowPlayingItem"):
-                        user = session.get("UserName", "Unknown User")
-                        title = session["NowPlayingItem"].get("Name", "Unknown Title")
-                        player = session.get("Client", "Unknown Player")
-                        progress = (session.get("PlayState", {}).get("PositionTicks", 0) / 
-                                 session["NowPlayingItem"].get("RunTimeTicks", 1)) * 100
-                        quality = session.get("PlayState", {}).get("PlayMethod", "Unknown Quality")
-                        
-                        stream_info = (
-                            f"**{title}**\n"
-                            f"📱 {player}\n"
-                            f"📊 {progress:.1f}% | {quality}"
-                        )
-                        active_users.append(stream_info)
+            # Get library stats
+            library_stats = self.get_library_stats()
+            total_items = sum(int(stats.get("count", 0)) for stats in library_stats.values())
+            total_episodes = sum(int(stats.get("episodes", 0)) for stats in library_stats.values())
 
             return {
-                "status": "🟢 Online",
-                "uptime": uptime,
-                "library_stats": library_stats,
-                "active_users": active_users
+                "server_name": system_info.get("ServerName", "Unknown Server"),
+                "version": system_info.get("Version", "Unknown Version"),
+                "operating_system": system_info.get("OperatingSystem", "Unknown OS"),
+                "current_streams": current_streams,
+                "total_items": total_items,
+                "total_episodes": total_episodes,
+                "library_stats": library_stats
             }
-
         except Exception as e:
             self.logger.error(f"Error getting server info: {e}")
-            return {
-                "status": "🔴 Error",
-                "uptime": "N/A",
-                "library_stats": {},
-                "active_users": []
-            }
+            return {}
 
     def calculate_uptime(self) -> str:
         """Calculate Jellyfin server uptime as a formatted string."""
@@ -490,39 +475,6 @@ class JellyfinCore(commands.Cog):
             "active_users": [],
             "current_streams": [],
         }
-
-    @tasks.loop(minutes=5)
-    async def update_status(self) -> None:
-        """Update the bot's status with Jellyfin information."""
-        try:
-            info = await self.get_server_info()
-            if info["status"] == "🟢 Online":
-                streams = len(info["current_streams"])
-                presence_text = self.config["presence"]["stream_text"].format(
-                    count=streams,
-                    s="s" if streams != 1 else ""
-                )
-            else:
-                presence_text = self.config["presence"]["offline_text"]
-            
-            await self.bot.change_presence(activity=discord.Game(name=presence_text))
-        except Exception as e:
-            self.logger.error(f"Error updating status: {e}")
-
-    @tasks.loop(minutes=1)
-    async def update_dashboard(self) -> None:
-        """Update the Discord dashboard with current Jellyfin information."""
-        try:
-            channel = self.bot.get_channel(self.CHANNEL_ID)
-            if not channel:
-                self.logger.error(f"Channel {self.CHANNEL_ID} not found")
-                return
-
-            info = await self.get_server_info()
-            embed = await self.create_dashboard_embed(info)
-            await self._update_dashboard_message(channel, embed)
-        except Exception as e:
-            self.logger.error(f"Error updating dashboard: {e}")
 
     async def create_dashboard_embed(self, info: Dict[str, Any]) -> discord.Embed:
         """Create the dashboard embed with server information."""
