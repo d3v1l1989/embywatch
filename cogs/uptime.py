@@ -17,13 +17,25 @@ class Uptime(commands.Cog):
         self.api_url = os.getenv("UPTIME_URL")
         self.username = os.getenv("UPTIME_USERNAME")
         self.password = os.getenv("UPTIME_PASSWORD")
-        self.monitor_id = int(os.getenv("UPTIME_MONITOR_ID"))
+        self.monitor_id = os.getenv("UPTIME_MONITOR_ID")
+        if self.monitor_id:
+            try:
+                self.monitor_id = int(self.monitor_id)
+            except ValueError:
+                self.logger.warning("Invalid UPTIME_MONITOR_ID format, uptime monitoring will be disabled")
+                self.monitor_id = None
+        else:
+            self.logger.info("UPTIME_MONITOR_ID not set, uptime monitoring will be disabled")
+            self.monitor_id = None
 
     def get_uptime_data(self) -> Tuple[
         Optional[float], Optional[float], Optional[float],
         Optional[float], Optional[float], Optional[float], Optional[str]
     ]:
         """Fetch uptime statistics from Uptime Kuma for specified monitor."""
+        if not all([self.api_url, self.username, self.password, self.monitor_id]):
+            self.logger.debug("Uptime monitoring is disabled due to missing configuration")
+            return None, None, None, None, None, None, None
         try:
             with UptimeKumaApi(self.api_url) as api:
                 api.login(self.username, self.password)

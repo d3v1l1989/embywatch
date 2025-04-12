@@ -104,7 +104,13 @@ services:
 
 2. **Create necessary directories and environment file:**
    ```bash
+   # Create directories
    mkdir -p data logs
+   
+   # Set correct permissions (assuming UID 1000)
+   sudo chown -R 1000:1000 data logs
+   
+   # Copy and edit environment file
    cp .env.example .env
    nano .env  # Edit with your configuration
    ```

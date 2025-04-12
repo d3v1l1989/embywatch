@@ -1,15 +1,63 @@
 {
     "dashboard": {
-        "name": "Your Jellyfin Dashboard",
-        "icon_url": "",
-        "footer_icon_url": ""
+        "name": "Jellyfin Dashboard",
+        "icon_url": "https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/icon-transparent.svg",
+        "footer_icon_url": "https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/icon-transparent.svg",
+        "color": "#00A4DC"
     },
     "jellyfin_sections": {
-        "show_all": true,
-        "sections": {}
+        "show_all": false,
+        "sections": {
+            "Movies": {
+                "display_name": "Movies",
+                "emoji": "🎥",
+                "show_episodes": false,
+                "color": "#FF6B6B"
+            },
+            "TV Shows": {
+                "display_name": "TV Shows",
+                "emoji": "📺",
+                "show_episodes": true,
+                "color": "#4ECDC4"
+            },
+            "Documentaries": {
+                "display_name": "Documentaries",
+                "emoji": "📚",
+                "show_episodes": false,
+                "color": "#45B7D1"
+            },
+            "Anime": {
+                "display_name": "Anime",
+                "emoji": "🎌",
+                "show_episodes": true,
+                "color": "#96CEB4"
+            },
+            "Music": {
+                "display_name": "Music",
+                "emoji": "🎵",
+                "show_episodes": false,
+                "color": "#FFEEAD"
+            }
+        }
     },
     "presence": {
-        "sections": [],
+        "sections": [
+            {
+                "section_title": "Movies",
+                "display_name": "Movies",
+                "emoji": "🎥"
+            },
+            {
+                "section_title": "TV Shows",
+                "display_name": "TV Shows",
+                "emoji": "📺"
+            },
+            {
+                "section_title": "Documentaries",
+                "display_name": "Documentaries",
+                "emoji": "📚"
+            }
+        ],
         "offline_text": "🔴 Server Offline!",
         "stream_text": "{count} active Stream{s} 🟢"
     },
