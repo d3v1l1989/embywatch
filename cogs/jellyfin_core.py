@@ -339,11 +339,12 @@ class JellyfinCore(commands.Cog):
                         emoji = value
                         break
 
-                # Get item counts
+                # Get item counts and size
                 params = {
                     "ParentId": library_id,
                     "Recursive": True,
-                    "IncludeItemTypes": "Movie,Series,Episode"
+                    "IncludeItemTypes": "Movie,Series,Episode",
+                    "Fields": "Size"  # Include size information
                 }
                 items_response = requests.get(
                     f"{self.JELLYFIN_URL}/Items",
@@ -356,6 +357,12 @@ class JellyfinCore(commands.Cog):
                     movie_count = sum(1 for item in items["Items"] if item["Type"] == "Movie")
                     series_count = sum(1 for item in items["Items"] if item["Type"] == "Series")
                     episode_count = sum(1 for item in items["Items"] if item["Type"] == "Episode")
+                    
+                    # Calculate total size
+                    total_size = 0
+                    for item in items["Items"]:
+                        if "Size" in item:
+                            total_size += item["Size"]
 
                     stats[library_id] = {
                         "count": movie_count + series_count,
@@ -363,7 +370,7 @@ class JellyfinCore(commands.Cog):
                         "display_name": config["display_name"],
                         "emoji": emoji,
                         "show_episodes": config["show_episodes"],
-                        "size": self._format_size(sum(item.get("Size", 0) for item in items["Items"]))
+                        "size": self._format_size(total_size)
                     }
                 else:
                     self.logger.error(f"Failed to get items for library {library_name}: HTTP {items_response.status_code}")
