@@ -307,6 +307,7 @@ class JellyfinCore(commands.Cog):
                 "X-Emby-Authorization": "MediaBrowser Client=\"JellyWatch\", Device=\"JellyWatch\", DeviceId=\"jellywatch-bot\", Version=\"1.0.0\""
             }
             
+            # Get all libraries
             response = requests.get(f"{self.JELLYFIN_URL}/Library/VirtualFolders", headers=headers)
             if response.status_code != 200:
                 self.logger.error(f"Failed to get library folders: HTTP {response.status_code}")
@@ -318,19 +319,29 @@ class JellyfinCore(commands.Cog):
             configured_sections = jellyfin_config["sections"]
 
             for library in libraries:
-                name = library["Name"]
-                if not jellyfin_config["show_all"] and name not in configured_sections:
+                library_id = library.get("ItemId")
+                library_name = library.get("Name", "").lower()
+                
+                if not jellyfin_config["show_all"] and library_id not in configured_sections:
                     continue
 
-                config = configured_sections.get(name, {
-                    "display_name": name,
-                    "emoji": "🎬",
+                # Get library configuration
+                config = configured_sections.get(library_id, {
+                    "display_name": library.get("Name", "Unknown Library"),
+                    "emoji": LIBRARY_EMOJIS["default"],
                     "show_episodes": False
                 })
 
+                # Find matching emoji based on library name
+                emoji = LIBRARY_EMOJIS["default"]
+                for key, value in LIBRARY_EMOJIS.items():
+                    if key in library_name:
+                        emoji = value
+                        break
+
                 # Get item counts
                 params = {
-                    "ParentId": library["ItemId"],
+                    "ParentId": library_id,
                     "Recursive": True,
                     "IncludeItemTypes": "Movie,Series,Episode"
                 }
@@ -346,15 +357,16 @@ class JellyfinCore(commands.Cog):
                     series_count = sum(1 for item in items["Items"] if item["Type"] == "Series")
                     episode_count = sum(1 for item in items["Items"] if item["Type"] == "Episode")
 
-                    stats[name] = {
+                    stats[library_id] = {
                         "count": movie_count + series_count,
                         "episodes": episode_count if config["show_episodes"] else 0,
                         "display_name": config["display_name"],
-                        "emoji": config["emoji"],
+                        "emoji": emoji,
                         "show_episodes": config["show_episodes"],
+                        "size": self._format_size(sum(item.get("Size", 0) for item in items["Items"]))
                     }
                 else:
-                    self.logger.error(f"Failed to get items for library {name}: HTTP {items_response.status_code}")
+                    self.logger.error(f"Failed to get items for library {library_name}: HTTP {items_response.status_code}")
 
             self.library_cache = stats
             self.last_library_update = current_time
@@ -507,11 +519,13 @@ class JellyfinCore(commands.Cog):
         library_stats = info.get('library_stats', {})
         if library_stats:
             stats_text = ""
-            for library_name, stats in library_stats.items():
-                stats_text += f"{stats.get('emoji', '📁')} **{stats.get('display_name', library_name)}**\n"
+            for library_id, stats in library_stats.items():
+                stats_text += f"{stats.get('emoji', '📁')} **{stats.get('display_name', 'Unknown Library')}**\n"
                 stats_text += f"```css\nTotal Items: {stats.get('count', 0)}\n```\n"
                 if stats.get('show_episodes', False):
                     stats_text += f"```css\nEpisodes: {stats.get('episodes', 0)}\n```\n"
+                if stats.get('size'):
+                    stats_text += f"```css\nSize: {stats.get('size')}\n```\n"
             embed.add_field(
                 name="Library Statistics",
                 value=stats_text,
