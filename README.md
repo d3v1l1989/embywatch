@@ -1,7 +1,7 @@
 # JellyWatch - Your Jellyfin Dashboard in Discord
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-[![Version](https://img.shields.io/github/release/nichtlegacy/JellyWatch.svg?style=flat-square)](https://github.com/nichtlegacy/JellyWatch/releases/latest)
+[![Version](https://img.shields.io/github/release/d3v1l1989/JellyfinWatch.svg?style=flat-square)](https://github.com/d3v1l1989/JellyfinWatch/releases/latest)
 ![Python](https://img.shields.io/badge/python-3.8+-yellow.svg)
 ![Discord.py](https://img.shields.io/badge/discord.py-2.0+-blueviolet.svg)
 ![Jellyfin](https://img.shields.io/badge/jellyfin-compatible-orange.svg)
@@ -17,17 +17,6 @@ JellyWatch is a Discord bot that brings your Jellyfin media server to life with 
 - **Customizable Dashboard**: Updates every minute with a clean Discord embed, fully configurable via JSON.
 - **Bot Presence**: Reflects Jellyfin status and stream count in the bot's Discord status.
 - **Logging**: Detailed logs for debugging and tracking bot activity.
-
-
-## Screenshots
-
-Here's how JellyWatch looks in action:
-
-- **Dashboard Example**:  
-  ![JellyWatch Dashboard](https://i.imgur.com/vAVrjvh.png)
-
-- **Server Offline Status**:  
-  ![JellyWatch Dashboard](https://i.imgur.com/QSiFpWP.png)
 
 
 ## Project Structure
@@ -65,8 +54,8 @@ Here's how JellyWatch looks in action:
 ### Installation local
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/nichtlegacy/JellyWatch.git
-   cd JellyWatch
+   git clone https://github.com/d3v1l1989/JellyfinWatch.git
+   cd JellyfinWatch
    ```
 
 2. **Install Dependencies**:
@@ -93,7 +82,7 @@ Here's how JellyWatch looks in action:
 ```
 services:
   jellywatch:
-    image: ghcr.io/nichtlegacy/jellywatch:latest
+    image: ghcr.io/d3v1l1989/jellyfinwatch:latest
     container_name: jellywatch
     environment:
       - RUNNING_IN_DOCKER=true
@@ -293,10 +282,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Star History
 
-<a href="https://www.star-history.com/#nichtlegacy/JellyWatch&Date">
+<a href="https://www.star-history.com/#d3v1l1989/JellyfinWatch&Date">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=nichtlegacy/JellyWatch&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=nichtlegacy/JellyWatch&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=nichtlegacy/JellyWatch&type=Date" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=d3v1l1989/JellyfinWatch&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=d3v1l1989/JellyfinWatch&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=d3v1l1989/JellyfinWatch&type=Date" />
  </picture>
 </a>
