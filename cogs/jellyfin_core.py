@@ -420,8 +420,8 @@ class JellyfinCore(commands.Cog):
             color=discord.Color.blue()
         )
         
-        # Set thumbnail to Jellyfin logo
-        embed.set_thumbnail(url="https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/icon-transparent.svg")
+        # Set thumbnail to Jellyfin logo (512x512 version)
+        embed.set_thumbnail(url="https://static-00.iconduck.com/assets.00/jellyfin-icon-512x512-jcuy5qbi.png")
         
         # Add fields
         await self._add_embed_fields(embed, info)
@@ -429,7 +429,7 @@ class JellyfinCore(commands.Cog):
         # Set footer with JellyfinWatch branding
         embed.set_footer(
             text="Powered by JellyfinWatch",
-            icon_url="https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/icon-transparent.svg"
+            icon_url="https://static-00.iconduck.com/assets.00/jellyfin-icon-96x96-h2vkd1yr.png"
         )
         
         return embed
