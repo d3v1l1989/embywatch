@@ -646,9 +646,15 @@ class JellyfinCore(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         
         try:
+            # Get current state from any library (they should all be the same)
+            current_state = False
+            if self.config["jellyfin_sections"]["sections"]:
+                first_library = next(iter(self.config["jellyfin_sections"]["sections"].values()))
+                current_state = first_library.get("show_episodes", False)
+            
             # Toggle the show_episodes setting for all libraries
             for library_id in self.config["jellyfin_sections"]["sections"]:
-                self.config["jellyfin_sections"]["sections"][library_id]["show_episodes"] = not self.config["jellyfin_sections"]["sections"][library_id].get("show_episodes", True)
+                self.config["jellyfin_sections"]["sections"][library_id]["show_episodes"] = not current_state
             
             # Save the updated config
             self.save_config()
@@ -659,11 +665,8 @@ class JellyfinCore(commands.Cog):
             embed = await self.create_dashboard_embed(info)
             await self._update_dashboard_message(channel, embed)
             
-            # Get the new state
-            new_state = self.config["jellyfin_sections"]["sections"][list(self.config["jellyfin_sections"]["sections"].keys())[0]]["show_episodes"]
-            
             await interaction.followup.send(
-                f"✅ Episode numbers display has been {'enabled' if new_state else 'disabled'}!",
+                f"✅ Episode numbers display has been {'enabled' if not current_state else 'disabled'}!",
                 ephemeral=True
             )
             
