@@ -123,10 +123,14 @@ The bot uses a `.env` file for configuration. Here are the available options:
 ## 🤖 Commands
 
 ### Admin Commands
-- `/update_libraries` - Manually update library statistics
-- `/toggle_episodes` - Toggle display of episode counts in library stats
-- `/reload` - Reload the bot configuration
-- `/help` - Show help information
+- `/update_libraries` - Update library sections in the dashboard
+- `/episodes` - Toggle display of episode counts in library stats
+- `/refresh` - Refresh the dashboard embed immediately
+- `/sync` - Sync slash commands with Discord
+- `/load` - Load a specific cog (admin only)
+- `/unload` - Unload a specific cog (admin only)
+- `/reload` - Reload a specific cog (admin only)
+- `/cogs` - List all available cogs
 
 ## 🎨 Dashboard Features
 
