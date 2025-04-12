@@ -512,7 +512,7 @@ class JellyfinCore(commands.Cog):
         embed.add_field(
             name="Server Status",
             value=f"{status}\nUptime: {uptime}",
-            inline=True
+            inline=False
         )
         
         # Add active streams
@@ -520,43 +520,23 @@ class JellyfinCore(commands.Cog):
         embed.add_field(
             name="Active Streams",
             value=f"```css\n{current_streams} active stream{'s' if current_streams != 1 else ''}\n```",
-            inline=True
+            inline=False
         )
         
         # Add library statistics
         library_stats = info.get('library_stats', {})
         if library_stats:
-            # Create two columns for libraries
-            left_column = ""
-            right_column = ""
-            libraries = list(library_stats.items())
-            half = (len(libraries) + 1) // 2
-            
-            for i, (library_id, stats) in enumerate(libraries):
-                library_text = f"{stats.get('emoji', '📁')} **{stats.get('display_name', 'Unknown Library')}**\n"
-                library_text += f"```css\nTotal Items: {stats.get('count', 0)}\n```\n"
+            stats_text = ""
+            for library_id, stats in library_stats.items():
+                stats_text += f"{stats.get('emoji', '📁')} **{stats.get('display_name', 'Unknown Library')}**\n"
+                stats_text += f"```css\nTotal Items: {stats.get('count', 0)}\n```\n"
                 if stats.get('show_episodes', False):
-                    library_text += f"```css\nEpisodes: {stats.get('episodes', 0)}\n```\n"
-                if stats.get('size'):
-                    library_text += f"```css\nSize: {stats.get('size')}\n```\n"
-                
-                if i < half:
-                    left_column += library_text
-                else:
-                    right_column += library_text
-            
+                    stats_text += f"```css\nEpisodes: {stats.get('episodes', 0)}\n```\n"
             embed.add_field(
                 name="Library Statistics",
-                value=left_column,
-                inline=True
+                value=stats_text,
+                inline=False
             )
-            
-            if right_column:  # Only add right column if there are libraries to show
-                embed.add_field(
-                    name="\u200b",  # Empty name for spacing
-                    value=right_column,
-                    inline=True
-                )
         
         # Set footer with JellyfinWatch branding
         embed.set_footer(
