@@ -516,6 +516,10 @@ class JellyfinCore(commands.Cog):
     async def _update_dashboard_message(self, channel: discord.TextChannel, embed: discord.Embed) -> None:
         """Update or create the dashboard message."""
         try:
+            if not channel:
+                self.logger.error("Dashboard channel not found")
+                return
+
             if self.dashboard_message_id:
                 try:
                     message = await channel.fetch_message(self.dashboard_message_id)
@@ -592,8 +596,11 @@ class JellyfinCore(commands.Cog):
             # Wait 10 seconds
             await asyncio.sleep(10)
             
-            # Update dashboard after waiting
-            await self._update_dashboard_message()
+            # Get server info and update dashboard
+            info = await self.get_server_info()
+            channel = self.bot.get_channel(self.CHANNEL_ID)
+            embed = await self.create_dashboard_embed(info)
+            await self._update_dashboard_message(channel, embed)
             
         except Exception as e:
             self.logger.error(f"Error updating libraries: {e}")
@@ -613,8 +620,11 @@ class JellyfinCore(commands.Cog):
             # Save the updated config
             self.save_config()
             
-            # Update the dashboard immediately
-            await self._update_dashboard_message()
+            # Get server info and update dashboard
+            info = await self.get_server_info()
+            channel = self.bot.get_channel(self.CHANNEL_ID)
+            embed = await self.create_dashboard_embed(info)
+            await self._update_dashboard_message(channel, embed)
             
             # Get the new state
             new_state = self.config["jellyfin_sections"]["sections"][list(self.config["jellyfin_sections"]["sections"].keys())[0]]["show_episodes"]
@@ -635,8 +645,12 @@ class JellyfinCore(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         
         try:
-            # Update the dashboard immediately
-            await self._update_dashboard_message()
+            # Get server info and update dashboard
+            info = await self.get_server_info()
+            channel = self.bot.get_channel(self.CHANNEL_ID)
+            embed = await self.create_dashboard_embed(info)
+            await self._update_dashboard_message(channel, embed)
+            
             await interaction.followup.send("✅ Dashboard refreshed successfully!", ephemeral=True)
             
         except Exception as e:
