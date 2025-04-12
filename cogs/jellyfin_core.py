@@ -669,8 +669,8 @@ class JellyfinCore(commands.Cog):
                 if stats.get('count', 0) > 0:  # Only show libraries with items
                     stats_text += f"{stats.get('emoji', '📁')} **{stats.get('display_name', 'Unknown Library')}**\n"
                     stats_text += f"```css\nTotal Items: {stats.get('count', 0)}\n```\n"
-                    # Only show episodes if the key exists in the stats
-                    if 'episodes' in stats:
+                    # Only show episodes if the key exists in the stats and the count is greater than 0
+                    if 'episodes' in stats and stats['episodes'] > 0:
                         stats_text += f"```css\nEpisodes: {stats['episodes']}\n```\n"
             if stats_text:  # Only add the field if there are libraries to show
                 embed.add_field(
