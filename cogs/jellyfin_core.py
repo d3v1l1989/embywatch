@@ -14,6 +14,15 @@ import asyncio
 
 # Library name to emoji mapping with priority order
 LIBRARY_EMOJIS = {
+    # Anime and Cartoons (highest priority)
+    "anime": "🎌",
+    "anime movies": "🎌",
+    "anime series": "🎌",
+    "japanese": "🎌",
+    "manga": "🎌",
+    "cartoons": "🎌",
+    "animation": "🎌",
+    
     # Movies and Films
     "movies": "🎬",
     "movie": "🎬",
@@ -28,15 +37,6 @@ LIBRARY_EMOJIS = {
     "series": "📺",
     "episodes": "📺",
     "seasons": "📺",
-    
-    # Anime and Cartoons
-    "anime": "🎌",
-    "cartoons": "🎌",
-    "animation": "🎌",
-    "manga": "🎌",
-    "japanese": "🎌",
-    "anime movies": "🎌",
-    "anime series": "🎌",
     
     # Documentaries
     "documentaries": "📽️",
@@ -84,9 +84,6 @@ LIBRARY_EMOJIS = {
     "kids": "👶",
     "children": "👶",
     "family": "👶",
-    "cartoons": "👶",
-    "educational": "👶",
-    "learning": "👶",
     "kids movies": "👶",
     "kids shows": "👶",
     "family movies": "👶",
@@ -152,7 +149,7 @@ LIBRARY_EMOJIS = {
 }
 
 # Generic terms to ignore when more specific content is found
-GENERIC_TERMS = {"movies", "movie", "films", "shows", "series", "tv", "television"}
+GENERIC_TERMS = {"movies", "movie", "films", "shows", "series", "tv", "television", "videos"}
 
 RUNNING_IN_DOCKER = os.getenv("RUNNING_IN_DOCKER", "false").lower() == "true"
 
@@ -454,10 +451,11 @@ class JellyfinCore(commands.Cog):
                 
                 # First pass: find all matches
                 matches = []
+                library_name_lower = library_name.lower()
                 for key, value in LIBRARY_EMOJIS.items():
                     if key == "default":
                         continue
-                    if key in library_name:
+                    if key in library_name_lower:
                         matches.append((key, value, len(key)))
                 
                 # Second pass: find the best non-generic match
@@ -478,6 +476,9 @@ class JellyfinCore(commands.Cog):
                 # If we found a match in the config, use that instead
                 if config.get("emoji"):
                     emoji = config["emoji"]
+                
+                # Log the emoji selection for debugging
+                self.logger.debug(f"Library '{library_name}' matched with emoji '{emoji}' (best match: '{best_match_key}')")
 
                 # Get item counts
                 params = {
@@ -746,17 +747,42 @@ class JellyfinCore(commands.Cog):
                 library_name = library.get("Name", "").lower()
                 library_id = library.get("ItemId")
                 
-                # Find matching emoji based on library name
+                # Find matching emoji based on library name with priority
                 emoji = LIBRARY_EMOJIS["default"]
+                best_match_length = 0
+                best_match_key = None
+                
+                # First pass: find all matches
+                matches = []
+                library_name_lower = library_name.lower()
                 for key, value in LIBRARY_EMOJIS.items():
-                    if key in library_name:
+                    if key == "default":
+                        continue
+                    if key in library_name_lower:
+                        matches.append((key, value, len(key)))
+                
+                # Second pass: find the best non-generic match
+                for key, value, length in matches:
+                    if key not in GENERIC_TERMS and length > best_match_length:
+                        best_match_length = length
+                        best_match_key = key
                         emoji = value
-                        break
+                
+                # If no non-generic match was found, use the best match overall
+                if best_match_key is None and matches:
+                    best_match_length = max(length for _, _, length in matches)
+                    for key, value, length in matches:
+                        if length == best_match_length:
+                            emoji = value
+                            break
+                
+                # Log the emoji selection for debugging
+                self.logger.debug(f"Library '{library_name}' matched with emoji '{emoji}' (best match: '{best_match_key}')")
                 
                 self.config["jellyfin_sections"]["sections"][library_id] = {
                     "display_name": library.get("Name", "Unknown Library"),
-                    "emoji": emoji,  # Use the found emoji
-                    "color": "#00A4DC",  # Default color
+                    "emoji": emoji,
+                    "color": "#00A4DC",
                     "show_episodes": True if any(keyword in library_name for keyword in ["tv", "television", "shows", "series", "anime"]) else False
                 }
 
