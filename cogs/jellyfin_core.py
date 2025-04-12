@@ -151,6 +151,9 @@ LIBRARY_EMOJIS = {
     "default": "📁"
 }
 
+# Generic terms to ignore when more specific content is found
+GENERIC_TERMS = {"movies", "movie", "films", "shows", "series", "tv", "television"}
+
 RUNNING_IN_DOCKER = os.getenv("RUNNING_IN_DOCKER", "false").lower() == "true"
 
 if not RUNNING_IN_DOCKER:
@@ -447,15 +450,30 @@ class JellyfinCore(commands.Cog):
                 # Find matching emoji based on library name with priority
                 emoji = LIBRARY_EMOJIS["default"]
                 best_match_length = 0
+                best_match_key = None
                 
+                # First pass: find all matches
+                matches = []
                 for key, value in LIBRARY_EMOJIS.items():
                     if key == "default":
                         continue
                     if key in library_name:
-                        # If this match is longer than our current best match, use it
-                        if len(key) > best_match_length:
-                            best_match_length = len(key)
+                        matches.append((key, value, len(key)))
+                
+                # Second pass: find the best non-generic match
+                for key, value, length in matches:
+                    if key not in GENERIC_TERMS and length > best_match_length:
+                        best_match_length = length
+                        best_match_key = key
+                        emoji = value
+                
+                # If no non-generic match was found, use the best match overall
+                if best_match_key is None and matches:
+                    best_match_length = max(length for _, _, length in matches)
+                    for key, value, length in matches:
+                        if length == best_match_length:
                             emoji = value
+                            break
                 
                 # If we found a match in the config, use that instead
                 if config.get("emoji"):
