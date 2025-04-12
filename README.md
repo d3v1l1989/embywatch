@@ -5,14 +5,16 @@ A Discord bot that monitors your Jellyfin server and displays real-time statisti
 ## ✨ Features
 
 - 📊 Real-time server statistics
-- 📺 Library overview with item counts
+- 📺 Library overview with item counts and episode tracking
 - 👥 User activity monitoring
 - 🎥 Currently playing content tracking
 - ⚙️ Customizable dashboard appearance
-- 🔄 Automatic updates every 30 seconds
+- 🔄 Automatic updates every 60 seconds
 - 🎨 Beautiful embed design with Jellyfin branding
 - 🔒 Secure authentication with Jellyfin API
 - 🛠️ Easy setup and configuration
+- 🎌 Smart emoji detection for different content types
+- 🔄 Cog management system for modular functionality
 
 ## 📸 Screenshots
 
@@ -67,7 +69,11 @@ pip install -r requirements.txt
 DISCORD_TOKEN=your_discord_bot_token
 JELLYFIN_URL=your_jellyfin_server_url
 JELLYFIN_API_KEY=your_jellyfin_api_key
+JELLYFIN_USERNAME=your_jellyfin_username
+JELLYFIN_PASSWORD=your_jellyfin_password
+CHANNEL_ID=your_discord_channel_id
 DISCORD_AUTHORIZED_USERS=user_id1,user_id2
+RUNNING_IN_DOCKER=false
 ```
 
 4. Run the bot:
@@ -130,5 +136,25 @@ The bot uses a `.env` file for configuration. Here are the available options:
 - `JELLYFIN_PASSWORD`: Your Jellyfin password
 - `CHANNEL_ID`: The Discord channel ID where the dashboard will be displayed
 - `DISCORD_AUTHORIZED_USERS`: Comma-separated list of Discord user IDs authorized to use admin commands
+- `RUNNING_IN_DOCKER`: Set to "true" if running in Docker, "false" otherwise
 
 ## 🤖 Commands
+
+### Admin Commands
+- `/update_libraries` - Update library sections in the dashboard
+- `/episodes` - Toggle display of episode counts in library stats
+- `/refresh` - Refresh the dashboard embed immediately
+- `/sync` - Sync slash commands with Discord
+- `/load` - Load a specific cog (admin only)
+- `/unload` - Unload a specific cog (admin only)
+- `/reload` - Reload a specific cog (admin only)
+- `/cogs` - List all available cogs
+
+## 🎨 Dashboard Features
+
+The dashboard provides real-time information about your Jellyfin server, including:
+- Server status and uptime
+- Active streams count
+- Library statistics with smart emoji detection
+- Episode counts for TV shows and anime libraries
+- Beautiful Jellyfin-themed design
