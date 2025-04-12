@@ -456,19 +456,19 @@ class JellyfinCore(commands.Cog):
                     if key == "default":
                         continue
                     if key in library_name_lower:
-                        matches.append((key, value, len(key)))
+                        matches.append((key, value, len(key), key in GENERIC_TERMS))
                 
                 # Second pass: find the best non-generic match
-                for key, value, length in matches:
-                    if key not in GENERIC_TERMS and length > best_match_length:
+                for key, value, length, is_generic in matches:
+                    if not is_generic and length > best_match_length:
                         best_match_length = length
                         best_match_key = key
                         emoji = value
                 
                 # If no non-generic match was found, use the best match overall
                 if best_match_key is None and matches:
-                    best_match_length = max(length for _, _, length in matches)
-                    for key, value, length in matches:
+                    best_match_length = max(length for _, _, length, _ in matches)
+                    for key, value, length, _ in matches:
                         if length == best_match_length:
                             emoji = value
                             break
@@ -759,19 +759,19 @@ class JellyfinCore(commands.Cog):
                     if key == "default":
                         continue
                     if key in library_name_lower:
-                        matches.append((key, value, len(key)))
+                        matches.append((key, value, len(key), key in GENERIC_TERMS))
                 
                 # Second pass: find the best non-generic match
-                for key, value, length in matches:
-                    if key not in GENERIC_TERMS and length > best_match_length:
+                for key, value, length, is_generic in matches:
+                    if not is_generic and length > best_match_length:
                         best_match_length = length
                         best_match_key = key
                         emoji = value
                 
                 # If no non-generic match was found, use the best match overall
                 if best_match_key is None and matches:
-                    best_match_length = max(length for _, _, length in matches)
-                    for key, value, length in matches:
+                    best_match_length = max(length for _, _, length, _ in matches)
+                    for key, value, length, _ in matches:
                         if length == best_match_length:
                             emoji = value
                             break
