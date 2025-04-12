@@ -14,6 +14,10 @@ A Discord bot that monitors your Jellyfin server and displays real-time statisti
 - 🔒 Secure authentication with Jellyfin API
 - 🛠️ Easy setup and configuration
 
+## 📸 Screenshots
+
+![Dashboard Preview](screenshots/dashboard.png)
+
 ## 🚀 Getting Started
 
 ### Prerequisites
