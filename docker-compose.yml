@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  jellywatch:
+    image: ghcr.io/d3v1l1989/jellyfinwatch:latest
+    container_name: jellywatch
+    restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - JELLYFIN_URL=${JELLYFIN_URL}
+      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
+      - JELLYFIN_USERNAME=${JELLYFIN_USERNAME}
+      - JELLYFIN_PASSWORD=${JELLYFIN_PASSWORD}
+      - CHANNEL_ID=${CHANNEL_ID}
+      - DISCORD_AUTHORIZED_USERS=${DISCORD_AUTHORIZED_USERS}
+      - RUNNING_IN_DOCKER=true
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs 
