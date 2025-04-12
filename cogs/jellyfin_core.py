@@ -12,32 +12,143 @@ from discord import app_commands
 from main import is_authorized
 import asyncio
 
-# Library name to emoji mapping
+# Library name to emoji mapping with priority order
 LIBRARY_EMOJIS = {
+    # Movies and Films
     "movies": "🎬",
     "movie": "🎬",
     "films": "🎬",
+    "cinema": "🎬",
+    "feature": "🎬",
+    
+    # TV Shows and Series
     "tv": "📺",
     "television": "📺",
     "shows": "📺",
     "series": "📺",
+    "episodes": "📺",
+    "seasons": "📺",
+    
+    # Anime and Cartoons
+    "anime": "🎌",
+    "cartoons": "🎌",
+    "animation": "🎌",
+    "manga": "🎌",
+    "japanese": "🎌",
+    "anime movies": "🎌",
+    "anime series": "🎌",
+    
+    # Documentaries
+    "documentaries": "📽️",
+    "docs": "📽️",
+    "documentary": "📽️",
+    "educational": "📽️",
+    "learning": "📽️",
+    "science": "🔬",
+    "history": "📜",
+    "nature": "🌿",
+    "wildlife": "🦁",
+    
+    # Music
     "music": "🎵",
     "songs": "🎵",
+    "albums": "🎵",
+    "artists": "🎵",
+    "playlists": "🎵",
+    "audio": "🎵",
+    "concerts": "🎤",
+    "live": "🎤",
+    
+    # Books and Audiobooks
     "books": "📚",
     "audiobooks": "📚",
+    "literature": "📚",
+    "reading": "📚",
+    "novels": "📚",
+    
+    # Photos and Images
     "photos": "📸",
     "pictures": "📸",
     "images": "📸",
+    "photography": "📸",
+    "gallery": "📸",
+    
+    # Home Videos
     "home videos": "🎥",
     "videos": "🎥",
-    "anime": "🎎",
-    "cartoons": "🎎",
-    "documentaries": "📽️",
-    "docs": "📽️",
+    "recordings": "🎥",
+    "family videos": "🎥",
+    "personal": "🎥",
+    
+    # Kids and Family
     "kids": "👶",
     "children": "👶",
     "family": "👶",
-    "default": "📁"  # Default emoji for unmatched libraries
+    "cartoons": "👶",
+    "educational": "👶",
+    "learning": "👶",
+    "kids movies": "👶",
+    "kids shows": "👶",
+    "family movies": "👶",
+    
+    # Sports
+    "sports": "⚽",
+    "football": "⚽",
+    "soccer": "⚽",
+    "basketball": "🏀",
+    "baseball": "⚾",
+    "tennis": "🎾",
+    "golf": "⛳",
+    "racing": "🏎️",
+    "olympics": "🏅",
+    "matches": "⚽",
+    "games": "🎮",
+    
+    # Foreign Content
+    "foreign": "🌍",
+    "international": "🌍",
+    "world": "🌍",
+    
+    # Korean Content
+    "korean": "🇰🇷",
+    "korea": "🇰🇷",
+    "k-drama": "🇰🇷",
+    "kdrama": "🇰🇷",
+    "kpop": "🇰🇷",
+    
+    # German Content
+    "german": "🇩🇪",
+    "deutsch": "🇩🇪",
+    "germany": "🇩🇪",
+    
+    # French Content
+    "french": "🇫🇷",
+    "france": "🇫🇷",
+    "français": "🇫🇷",
+    
+    # Additional Categories
+    "comedy": "😂",
+    "standup": "😂",
+    "horror": "👻",
+    "thriller": "🔪",
+    "action": "💥",
+    "adventure": "🗺️",
+    "drama": "🎭",
+    "romance": "💕",
+    "scifi": "🚀",
+    "fantasy": "🧙",
+    "classic": "🎭",
+    "indie": "🎨",
+    "bollywood": "🎭",
+    "hollywood": "🎬",
+    "4k": "📺",
+    "uhd": "📺",
+    "hdr": "📺",
+    "dolby": "🎵",
+    "atmos": "🎵",
+    
+    # Default fallback
+    "default": "📁"
 }
 
 RUNNING_IN_DOCKER = os.getenv("RUNNING_IN_DOCKER", "false").lower() == "true"
@@ -333,12 +444,22 @@ class JellyfinCore(commands.Cog):
                     "show_episodes": False
                 })
 
-                # Find matching emoji based on library name
+                # Find matching emoji based on library name with priority
                 emoji = LIBRARY_EMOJIS["default"]
+                best_match_length = 0
+                
                 for key, value in LIBRARY_EMOJIS.items():
+                    if key == "default":
+                        continue
                     if key in library_name:
-                        emoji = value
-                        break
+                        # If this match is longer than our current best match, use it
+                        if len(key) > best_match_length:
+                            best_match_length = len(key)
+                            emoji = value
+                
+                # If we found a match in the config, use that instead
+                if config.get("emoji"):
+                    emoji = config["emoji"]
 
                 # Get item counts
                 params = {
