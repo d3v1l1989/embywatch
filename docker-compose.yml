@@ -5,6 +5,7 @@ services:
     image: ghcr.io/d3v1l1989/jellyfinwatch:latest
     container_name: jellywatch
     restart: unless-stopped
+    user: "1000:1000"
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
       - JELLYFIN_URL=${JELLYFIN_URL}
