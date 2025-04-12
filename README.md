@@ -23,6 +23,28 @@ A Discord bot that monitors your Jellyfin server and displays real-time statisti
 - Jellyfin Server URL and API Key
 - Discord Server with admin permissions
 
+### Creating a Discord Bot
+
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications)
+2. Click "New Application" and give it a name
+3. Go to the "Bot" tab and click "Add Bot"
+4. Under "Privileged Gateway Intents", enable:
+   - PRESENCE INTENT
+   - SERVER MEMBERS INTENT
+   - MESSAGE CONTENT INTENT
+5. Click "Reset Token" to get your bot token (save this for later)
+6. Go to "OAuth2" → "URL Generator"
+7. Select these scopes:
+   - `bot`
+   - `applications.commands`
+8. Select these bot permissions:
+   - `Send Messages`
+   - `Embed Links`
+   - `Attach Files`
+   - `Read Message History`
+   - `Use Slash Commands`
+9. Copy the generated URL and open it in your browser to invite the bot to your server
+
 ### Installation
 
 1. Clone the repository:
@@ -49,6 +71,46 @@ DISCORD_AUTHORIZED_USERS=user_id1,user_id2
 python main.py
 ```
 
+### Docker Installation
+
+1. Create a `docker-compose.yml` file:
+```yaml
+version: '3.8'
+
+services:
+  jellywatch:
+    image: ghcr.io/d3v1l1989/jellyfinwatch:latest
+    container_name: jellywatch
+    restart: unless-stopped
+    environment:
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - JELLYFIN_URL=${JELLYFIN_URL}
+      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
+      - DISCORD_AUTHORIZED_USERS=${DISCORD_AUTHORIZED_USERS}
+      - RUNNING_IN_DOCKER=true
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+```
+
+2. Create necessary directories and environment file:
+```bash
+# Create directories
+mkdir -p data logs
+
+# Set correct permissions
+sudo chown -R 1000:1000 data logs
+
+# Copy and edit environment file
+cp .env.example .env
+nano .env  # Edit with your configuration
+```
+
+3. Start the container:
+```bash
+docker compose up -d
+```
+
 ## 🛠️ Configuration
 
 The bot uses a `.env` file for configuration. Here are the available options:
@@ -61,7 +123,6 @@ The bot uses a `.env` file for configuration. Here are the available options:
 ## 🤖 Commands
 
 ### Admin Commands
-- `/setup` - Set up the dashboard in the current channel
 - `/update_libraries` - Manually update library statistics
 - `/toggle_episodes` - Toggle display of episode counts in library stats
 - `/reload` - Reload the bot configuration
@@ -96,4 +157,5 @@ If this bot has helped you, consider supporting my work! Your support helps me m
 
 - [Jellyfin](https://jellyfin.org/) for the amazing media server
 - [Discord.py](https://discordpy.readthedocs.io/) for the Discord API wrapper
+- [nichtlegacy](https://github.com/nichtlegacy) for the original [PlexWatch](https://github.com/nichtlegacy/PlexWatch) project that inspired this bot
 - All contributors and users of this bot
