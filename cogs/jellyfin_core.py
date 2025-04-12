@@ -599,6 +599,96 @@ class JellyfinCore(commands.Cog):
             self.logger.error(f"Error updating libraries: {e}")
             await interaction.followup.send(f"❌ Error updating libraries: {str(e)}", ephemeral=True)
 
+    @app_commands.command(name="episodes", description="Toggle episode numbers display in the dashboard")
+    @app_commands.check(is_authorized)
+    async def toggle_episodes(self, interaction: discord.Interaction):
+        """Toggle episode numbers display in the dashboard."""
+        await interaction.response.defer(ephemeral=True)
+        
+        try:
+            # Toggle the show_episodes setting for all libraries
+            for library_id in self.config["jellyfin_sections"]["sections"]:
+                self.config["jellyfin_sections"]["sections"][library_id]["show_episodes"] = not self.config["jellyfin_sections"]["sections"][library_id].get("show_episodes", True)
+            
+            # Save the updated config
+            self.save_config()
+            
+            # Update the dashboard immediately
+            await self._update_dashboard_message()
+            
+            # Get the new state
+            new_state = self.config["jellyfin_sections"]["sections"][list(self.config["jellyfin_sections"]["sections"].keys())[0]]["show_episodes"]
+            
+            await interaction.followup.send(
+                f"✅ Episode numbers display has been {'enabled' if new_state else 'disabled'}!",
+                ephemeral=True
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Error toggling episodes display: {e}")
+            await interaction.followup.send(f"❌ Error toggling episodes display: {str(e)}", ephemeral=True)
+
+    @app_commands.command(name="refresh", description="Refresh the dashboard embed immediately")
+    @app_commands.check(is_authorized)
+    async def refresh_dashboard(self, interaction: discord.Interaction):
+        """Refresh the dashboard embed immediately."""
+        await interaction.response.defer(ephemeral=True)
+        
+        try:
+            # Update the dashboard immediately
+            await self._update_dashboard_message()
+            await interaction.followup.send("✅ Dashboard refreshed successfully!", ephemeral=True)
+            
+        except Exception as e:
+            self.logger.error(f"Error refreshing dashboard: {e}")
+            await interaction.followup.send(f"❌ Error refreshing dashboard: {str(e)}", ephemeral=True)
+
+    @app_commands.command(name="sync", description="Sync slash commands with Discord")
+    @app_commands.check(is_authorized)
+    async def sync_commands(self, interaction: discord.Interaction):
+        """Sync slash commands with Discord."""
+        await interaction.response.defer(ephemeral=True)
+        
+        try:
+            # Sync the command tree
+            await self.bot.tree.sync()
+            await interaction.followup.send("✅ Slash commands synced successfully!", ephemeral=True)
+        except Exception as e:
+            self.logger.error(f"Error syncing commands: {e}")
+            await interaction.followup.send(f"❌ Error syncing commands: {str(e)}", ephemeral=True)
+
+    def load_config(self) -> Dict[str, Any]:
+        """Load the configuration from config.json."""
+        try:
+            with open(self.CONFIG_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            self.logger.error("Config file not found. Creating default config.")
+            default_config = {
+                "jellyfin_url": "",
+                "jellyfin_api_key": "",
+                "dashboard_channel_id": 0,
+                "jellyfin_sections": {
+                    "sections": {},
+                    "show_all": False
+                }
+            }
+            with open(self.CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(default_config, f, indent=4)
+            return default_config
+        except json.JSONDecodeError as e:
+            self.logger.error(f"Error parsing config file: {e}")
+            raise
+
+    def save_config(self) -> None:
+        """Save the current configuration to config.json."""
+        try:
+            with open(self.CONFIG_FILE, "w", encoding="utf-8") as f:
+                json.dump(self.config, f, indent=4)
+        except Exception as e:
+            self.logger.error(f"Error saving config file: {e}")
+            raise
+
 async def setup(bot: commands.Bot) -> None:
     """Add the JellyfinCore cog to the bot."""
     await bot.add_cog(JellyfinCore(bot)) 
