@@ -440,18 +440,17 @@ class JellyfinCore(commands.Cog):
             color=discord.Color.green() if info["status"] == "🟢 Online" else discord.Color.red()
         )
         
-        if self.config["dashboard"]["icon_url"]:
-            embed.set_thumbnail(url=self.config["dashboard"]["icon_url"])
+        # Set Jellyfin logo as thumbnail
+        embed.set_thumbnail(url="https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/icon-transparent.svg")
         
         await self._add_embed_fields(embed, info)
         
-        if self.config["dashboard"]["footer_icon_url"]:
-            embed.set_footer(
-                text=f"Last updated: {datetime.now().strftime('%H:%M:%S')}",
-                icon_url=self.config["dashboard"]["footer_icon_url"]
-            )
-        else:
-            embed.set_footer(text=f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
+        # Set footer with Jellyfin logo and last updated time
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        embed.set_footer(
+            text=f"Last updated: {current_time} • Powered by Jellyfin",
+            icon_url="https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/icon-transparent.svg"
+        )
         
         return embed
 
@@ -473,11 +472,14 @@ class JellyfinCore(commands.Cog):
             
             # Create a rich field for each library
             stat_text = f"{stats['emoji']} **{stats['display_name']}**\n"
-            stat_text += f"• Total Items: {stats['count']}\n"
+            
+            # Add items count with code block for darker background
+            stat_text += f"```\nTotal Items: {stats['count']}\n```\n"
+            
             if stats["show_episodes"] and stats["episodes"] > 0:
-                stat_text += f"• Episodes: {stats['episodes']}\n"
+                stat_text += f"```\nEpisodes: {stats['episodes']}\n```\n"
             if stats.get("size", 0) > 0:
-                stat_text += f"• Size: {stats['size']}\n"
+                stat_text += f"```\nSize: {stats['size']}\n```\n"
             
             embed.add_field(
                 name="\u200b",  # Empty name for spacing
@@ -489,7 +491,7 @@ class JellyfinCore(commands.Cog):
         if info["active_users"]:
             streams_text = "**Active Streams**\n"
             for stream in info["active_users"]:
-                streams_text += f"• {stream}\n"
+                streams_text += f"```\n{stream}\n```\n"
             embed.add_field(
                 name="\u200b",  # Empty name for spacing
                 value=streams_text,
@@ -498,7 +500,7 @@ class JellyfinCore(commands.Cog):
         else:
             embed.add_field(
                 name="\u200b",  # Empty name for spacing
-                value="**Active Streams**\nNo active streams",
+                value="**Active Streams**\n```\nNo active streams\n```",
                 inline=False
             )
 
