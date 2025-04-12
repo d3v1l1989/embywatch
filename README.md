@@ -8,7 +8,6 @@
 
 JellyWatch is a Discord bot that brings your Jellyfin media server to life with a real-time dashboard. Monitor active streams, track SABnzbd downloads, and check server uptime—all directly in your Discord server. Designed for Jellyfin enthusiasts, JellyWatch delivers a sleek, embed-based interface to keep you informed about your media ecosystem.
 
-
 ## Features
 
 - **Jellyfin Monitoring**: Displays active streams with details like title, user, progress, quality, and player info.
@@ -17,7 +16,16 @@ JellyWatch is a Discord bot that brings your Jellyfin media server to life with 
 - **Customizable Dashboard**: Updates every minute with a clean Discord embed, fully configurable via JSON.
 - **Bot Presence**: Reflects Jellyfin status and stream count in the bot's Discord status.
 - **Logging**: Detailed logs for debugging and tracking bot activity.
-
+- **Library Management**: 
+  - Automatic library detection and configuration
+  - Customizable library display names and emojis
+  - Toggle episode count visibility per library
+  - Hide empty libraries from the dashboard
+- **Modern UI**: 
+  - Clean, organized dashboard layout
+  - Jellyfin-branded thumbnails and icons
+  - Code block formatting for better readability
+  - Dark mode compatible
 
 ## Project Structure
 
@@ -40,7 +48,6 @@ JellyWatch is a Discord bot that brings your Jellyfin media server to life with 
 ├─ README.md           # This file
 └─ requirements.txt    # Python dependencies
 ```
-
 
 ## Setup
 
@@ -158,7 +165,6 @@ UPTIME_MONITOR_ID=your_monitor_id
 - `UPTIME_PASSWORD`: Optional, Password for your Uptime Kuma instance
 - `UPTIME_MONITOR_ID`: Optional, The specific monitor ID from Uptime Kuma to track server uptime
 
-
 ## Configuration
 
 JellyWatch is customized via `/data/config.json`. Below is the structure with example values based on your setup:
@@ -196,11 +202,6 @@ JellyWatch is customized via `/data/config.json`. Below is the structure with ex
                 "section_title": "Movies",
                 "display_name": "Movies",
                 "emoji": "🎥"
-            },
-            {
-                "section_title": "Shows",
-                "display_name": "Shows",
-                "emoji": "📺"
             }
         ],
         "offline_text": "🔴 Server Offline!",
@@ -208,86 +209,56 @@ JellyWatch is customized via `/data/config.json`. Below is the structure with ex
     },
     "cache": {
         "library_update_interval": 900
-    },
-    "sabnzbd": {
-        "keywords": ["AC3", "DL", "German", "1080p", "2160p", "4K", "GERMAN", "English"]
     }
 }
 ```
 
-### Configuration Details
-- **`dashboard`**:
-  - `name`: Title of the Discord embed (e.g., "LEGACYVault Dashboard").
-  - `icon_url`: URL to the dashboard icon (displayed in author and thumbnail).
-  - `footer_icon_url`: URL to the footer icon.
-
-- **`jellyfin_sections`**:
-  - `show_all`: If `true`, all Jellyfin library sections are shown; if `false`, only listed sections are included.
-  - `sections`: Defines displayed Jellyfin libraries.
-    - Keys match your Jellyfin library titles (e.g., "Movies", "Shows").
-    - `display_name`: Name shown in the dashboard.
-    - `emoji`: Emoji for visual flair (e.g., "🎥" for movies).
-    - `show_episodes`: If `true`, episode counts are shown (useful for series).
-
-- **`presence`**:
-  - `sections`: Libraries shown in the bot's Discord status when idle.
-    - `section_title`: Matches `jellyfin_sections` keys.
-    - `display_name`: Name in the status.
-    - `emoji`: Emoji in the status.
-  - `offline_text`: Bot status when Jellyfin is offline.
-  - `stream_text`: Bot status with active streams (e.g., "3 active Streams 🟢").
-
-- **`cache`**:
-  - `library_update_interval`: Time (in seconds) between Jellyfin library cache updates (default: 900 = 15 minutes).
-
-- **`sabnzbd`**:
-  - `keywords`: List of keywords used to trim download names. The bot cuts off the name at the first occurrence of any keyword (e.g., "Movie.Name.German.1080p" becomes "Movie Name"), then limits it to 40 characters (truncating with "..." if longer). This ensures clean, readable names in the dashboard.
-
-## User Mapping
-
-The `/data/user_mapping.json` file allows you to personalize Jellyfin usernames by mapping them to custom display names shown in the dashboard. This keeps the interface clean and user-friendly.
-
-**Example `user_mapping.json`**:
-```json
-{
-    "nichtlegacy": "LEGACY",
-    "jellyfan99": "Fan",
-    "moviebuff": "Buff"
-}
-```
-
-- **Key**: The exact Jellyfin username (case-sensitive).
-- **Value**: The custom name displayed in the dashboard.
-
-If a username is listed, its mapped name is used (e.g., "Alex" instead of "user123"); otherwise, the original Jellyfin username is shown.
-
-## Logging
-Logs are stored in `/logs/jellywatch_debug.log`:
-- **Format**: `timestamp - logger_name - level - message` (e.g., `2025-03-12 20:37:34,092 - jellywatch_bot - INFO - Bot is online`).
-- **Rotation**: Daily, with a 7-day backup (older logs are overwritten).
-- **Levels**: DEBUG, INFO, WARNING, ERROR – useful for troubleshooting.
-
-Example log entries:
-```
-2025-03-12 20:37:34,509 - jellywatch_bot - INFO - Loaded cog: jellyfin_core
-2025-03-12 20:37:35,050 - jellywatch_bot - ERROR - Failed to connect to Jellyfin server: Timeout
-```
-
 ## Commands
-JellyWatch uses Discord slash commands (synced on startup):
-- `/load <cog>`: Load a cog (e.g., `jellyfin_core`).
-- `/unload <cog>`: Unload a cog.
-- `/reload <cog>`: Reload a cog.
-- `/cogs`: List all available cogs with their status.
 
-*Note*: Only users listed in `DISCORD_AUTHORIZED_USERS` can use these commands.
+JellyWatch provides several slash commands for managing your dashboard:
 
-## Acknowledgements
-- [Jellyfin](https://www.jellyfin.org) - For providing an excellent media server platform that powers the core monitoring capabilities of JellyWatch.
-- [JellyfinAPI](https://github.com/jellyfin/jellyfin-sdk-dotnet) - A .NET library for interacting with Jellyfin servers, essential for stream and library tracking.
-- [discord.py](https://github.com/Rapptz/discord.py) - The backbone of the Discord bot functionality, making embeds and real-time updates possible.
-- [SABnzbd](https://sabnzbd.org) - A powerful download manager integrated to monitor ongoing downloads within the dashboard.
-- [Uptime Kuma](https://uptime.kuma.pet) - A lightweight tool for monitoring server uptime, integrated for availability tracking over 24h, 7d, and 30d.
+- `/update_libraries`: Update library sections in the dashboard
+- `/episodes`: Toggle episode numbers display in the dashboard
+- `/refresh`: Refresh the dashboard embed immediately
+- `/sync`: Sync slash commands with Discord
+
+## Library Management
+
+### Automatic Library Detection
+JellyWatch automatically detects your Jellyfin libraries and assigns appropriate emojis based on their names. You can customize these settings through the dashboard configuration.
+
+### Customizing Libraries
+Each library can be configured with:
+- Custom display name
+- Custom emoji
+- Episode count visibility toggle
+
+### Episode Count Control
+You can toggle episode count visibility for all libraries at once using the `/episodes` command. This setting is persisted across bot restarts.
+
+### Empty Libraries
+Libraries with no items are automatically hidden from the dashboard to keep it clean and focused on active content.
+
+## Dashboard Features
+
+### Real-time Updates
+- Server status (online/offline)
+- Active stream count and details
+- Library statistics
+- Uptime information
+
+### Modern UI Elements
+- Jellyfin-branded thumbnails and icons
+- Code block formatting for better readability
+- Dark mode compatible design
+- Clean, organized layout
+
+### Customization Options
+- Custom server name
+- Custom dashboard title
+- Custom emojis for libraries
+- Toggleable episode counts
+- Configurable update intervals
 
 ## Contributing
 
