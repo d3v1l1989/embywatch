@@ -1,18 +1,16 @@
 #!/bin/sh
-set -e
 
-CONFIG_DIR="/app/data"
+# Create necessary directories if they don't exist
+mkdir -p /app/data /app/logs
 
-# Ensure config directory exists
-mkdir -p "$CONFIG_DIR"
-
-# Copy default config files only if the directory is empty
-if [ -z "$(ls -A $CONFIG_DIR)" ]; then
-    echo "No config files found in $CONFIG_DIR, copying defaults..."
-    cp -r /app/defaults/* "$CONFIG_DIR/"
-else
-    echo "Config files already exist in $CONFIG_DIR, skipping copy."
+# Copy default configuration files if they don't exist
+if [ ! -f "/app/data/config.json" ]; then
+    cp /app/defaults/config.json /app/data/
 fi
 
-# Start the main process
+if [ ! -f "/app/data/user_mapping.json" ]; then
+    cp /app/defaults/user_mapping.json /app/data/
+fi
+
+# Start the bot
 exec "$@"
