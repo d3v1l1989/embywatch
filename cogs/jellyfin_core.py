@@ -479,7 +479,7 @@ class JellyfinCore(commands.Cog):
     async def create_dashboard_embed(self, info: Dict[str, Any]) -> discord.Embed:
         """Create the dashboard embed with server information."""
         embed = discord.Embed(
-            title="Jellyfin Server Dashboard",
+            title=f"📺 {info.get('server_name', 'Jellyfin Server')}",
             description="Real-time server status and statistics",
             color=discord.Color.blue()
         )
@@ -487,8 +487,44 @@ class JellyfinCore(commands.Cog):
         # Set thumbnail to Jellyfin logo (512x512 version)
         embed.set_thumbnail(url="https://static-00.iconduck.com/assets.00/jellyfin-icon-512x512-jcuy5qbi.png")
         
-        # Add fields
-        await self._add_embed_fields(embed, info)
+        # Add server status
+        status = "🟢 Online" if info else "🔴 Offline"
+        uptime = self.calculate_uptime()
+        embed.add_field(
+            name="Server Status",
+            value=f"{status}\nUptime: {uptime}",
+            inline=False
+        )
+        
+        # Add server info
+        embed.add_field(
+            name="Server Info",
+            value=f"Version: {info.get('version', 'Unknown')}\nOS: {info.get('operating_system', 'Unknown')}",
+            inline=False
+        )
+        
+        # Add library statistics
+        library_stats = info.get('library_stats', {})
+        if library_stats:
+            stats_text = ""
+            for library_name, stats in library_stats.items():
+                stats_text += f"{stats.get('emoji', '📁')} **{stats.get('display_name', library_name)}**\n"
+                stats_text += f"```css\nTotal Items: {stats.get('count', 0)}\n```\n"
+                if stats.get('show_episodes', False):
+                    stats_text += f"```css\nEpisodes: {stats.get('episodes', 0)}\n```\n"
+            embed.add_field(
+                name="Library Statistics",
+                value=stats_text,
+                inline=False
+            )
+        
+        # Add active streams
+        current_streams = info.get('current_streams', 0)
+        embed.add_field(
+            name="Active Streams",
+            value=f"```css\n{current_streams} active stream{'s' if current_streams != 1 else ''}\n```",
+            inline=False
+        )
         
         # Set footer with JellyfinWatch branding
         embed.set_footer(
@@ -497,56 +533,6 @@ class JellyfinCore(commands.Cog):
         )
         
         return embed
-
-    async def _add_embed_fields(self, embed: discord.Embed, info: Dict[str, Any]) -> None:
-        """Add fields to the dashboard embed."""
-        # Server Status
-        embed.add_field(
-            name="Server Status",
-            value=f"{info['status']}\nUptime: {info['uptime']}",
-            inline=False
-        )
-
-        # Library Statistics - One field per library
-        for section, stats in info["library_stats"].items():
-            # Get the color from config or use default
-            color = self.config["jellyfin_sections"]["sections"].get(section, {}).get("color", "#00A4DC")
-            # Convert hex color to discord.Color
-            color = discord.Color.from_str(color)
-            
-            # Create a rich field for each library
-            stat_text = f"{stats['emoji']} **{stats['display_name']}**\n"
-            
-            # Add items count with code block for darker background
-            stat_text += f"```css\nTotal Items: {stats['count']}\n```\n"
-            
-            if stats["show_episodes"] and stats["episodes"] > 0:
-                stat_text += f"```css\nEpisodes: {stats['episodes']}\n```\n"
-            if stats.get("size", 0) > 0:
-                stat_text += f"```css\nSize: {stats['size']}\n```\n"
-            
-            embed.add_field(
-                name="\u200b",  # Empty name for spacing
-                value=stat_text,
-                inline=True
-            )
-
-        # Active Streams
-        if info["active_users"]:
-            streams_text = "**Active Streams**\n"
-            for stream in info["active_users"]:
-                streams_text += f"```css\n{stream}\n```\n"
-            embed.add_field(
-                name="\u200b",  # Empty name for spacing
-                value=streams_text,
-                inline=False
-            )
-        else:
-            embed.add_field(
-                name="\u200b",  # Empty name for spacing
-                value="**Active Streams**\n```css\nNo active streams\n```",
-                inline=False
-            )
 
     async def _update_dashboard_message(self, channel: discord.TextChannel, embed: discord.Embed) -> None:
         """Update or create the dashboard message."""
