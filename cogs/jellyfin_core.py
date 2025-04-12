@@ -84,6 +84,14 @@ class JellyfinCore(commands.Cog):
         self.update_status.start()
         self.update_dashboard.start()
 
+    def _format_size(self, size_bytes: int) -> str:
+        """Convert bytes to a human-readable format."""
+        for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+            if size_bytes < 1024.0:
+                return f"{size_bytes:.1f} {unit}"
+            size_bytes /= 1024.0
+        return f"{size_bytes:.1f} PB"
+
     def _load_config(self) -> Dict[str, Any]:
         """Load configuration from config.json with defaults if unavailable."""
         default_config = {
