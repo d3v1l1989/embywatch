@@ -253,7 +253,7 @@ class JellyfinCore(commands.Cog):
             self.logger.error(f"Failed to load user mapping: {e}")
             return {}
 
-    def connect_to_jellyfin(self) -> bool:
+    async def connect_to_jellyfin(self) -> bool:
         """Attempt to establish a connection to the Jellyfin server."""
         try:
             # Common headers for all requests
@@ -269,17 +269,18 @@ class JellyfinCore(commands.Cog):
             # First try with API key if available
             if self.JELLYFIN_API_KEY:
                 headers["X-Emby-Token"] = self.JELLYFIN_API_KEY
-                response = requests.get(f"{self.JELLYFIN_URL}/System/Info", headers=headers)
-                if response.status_code == 200:
-                    if self.jellyfin_start_time is None:
-                        self.jellyfin_start_time = time.time()
-                    return True
-                elif response.status_code == 401:
-                    self.logger.error("Invalid API key provided")
-                    return False
-                else:
-                    self.logger.error(f"Failed to connect with API key: HTTP {response.status_code}")
-                    return False
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(f"{self.JELLYFIN_URL}/System/Info", headers=headers) as response:
+                        if response.status == 200:
+                            if self.jellyfin_start_time is None:
+                                self.jellyfin_start_time = time.time()
+                            return True
+                        elif response.status == 401:
+                            self.logger.error("Invalid API key provided")
+                            return False
+                        else:
+                            self.logger.error(f"Failed to connect with API key: HTTP {response.status}")
+                            return False
 
             # If API key fails or not available, try username/password
             if self.JELLYFIN_USERNAME and self.JELLYFIN_PASSWORD:
@@ -287,21 +288,22 @@ class JellyfinCore(commands.Cog):
                     "Username": self.JELLYFIN_USERNAME,
                     "Pw": self.JELLYFIN_PASSWORD
                 }
-                response = requests.post(
-                    f"{self.JELLYFIN_URL}/Users/AuthenticateByName",
-                    json=auth_data,
-                    headers=headers
-                )
-                if response.status_code == 200:
-                    if self.jellyfin_start_time is None:
-                        self.jellyfin_start_time = time.time()
-                    return True
-                elif response.status_code == 401:
-                    self.logger.error("Invalid username or password")
-                    return False
-                else:
-                    self.logger.error(f"Failed to authenticate with username/password: HTTP {response.status_code}")
-                    return False
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(
+                        f"{self.JELLYFIN_URL}/Users/AuthenticateByName",
+                        json=auth_data,
+                        headers=headers
+                    ) as response:
+                        if response.status == 200:
+                            if self.jellyfin_start_time is None:
+                                self.jellyfin_start_time = time.time()
+                            return True
+                        elif response.status == 401:
+                            self.logger.error("Invalid username or password")
+                            return False
+                        else:
+                            self.logger.error(f"Failed to authenticate with username/password: HTTP {response.status}")
+                            return False
 
             self.logger.error("No authentication method provided (API key or username/password required)")
             return False
@@ -522,7 +524,7 @@ class JellyfinCore(commands.Cog):
             self.logger.error(f"Error updating library stats: {e}")
             return self.library_cache
 
-    def get_sessions(self) -> List[Dict[str, Any]]:
+    async def get_sessions(self) -> List[Dict[str, Any]]:
         """Get current Jellyfin sessions."""
         if not self.connect_to_jellyfin():
             return []
@@ -538,15 +540,16 @@ class JellyfinCore(commands.Cog):
                 "X-Emby-Authorization": "MediaBrowser Client=\"JellyWatch\", Device=\"JellyWatch\", DeviceId=\"jellywatch-bot\", Version=\"1.0.0\""
             }
             
-            response = requests.get(f"{self.JELLYFIN_URL}/Sessions", headers=headers)
-            if response.status_code == 200:
-                return response.json()
-            elif response.status_code == 401:
-                self.logger.error("Invalid API key when fetching sessions")
-                return []
-            else:
-                self.logger.error(f"Failed to get sessions: HTTP {response.status_code}")
-                return []
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{self.JELLYFIN_URL}/Sessions", headers=headers) as response:
+                    if response.status == 200:
+                        return await response.json()
+                    elif response.status == 401:
+                        self.logger.error("Invalid API key when fetching sessions")
+                        return []
+                    else:
+                        self.logger.error(f"Failed to get sessions: HTTP {response.status}")
+                        return []
         except Exception as e:
             self.logger.error(f"Error getting sessions: {e}")
             return []
