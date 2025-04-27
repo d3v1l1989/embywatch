@@ -445,7 +445,7 @@ class JellyfinCore(commands.Cog):
                     config = configured_sections.get(library_id, {
                         "display_name": library.get("Name", "Unknown Library"),
                         "emoji": LIBRARY_EMOJIS["default"],
-                        "show_episodes": False
+                        "show_episodes": 0  # Convert boolean to integer
                     })
 
                     # Find matching emoji based on library name with priority
@@ -505,7 +505,8 @@ class JellyfinCore(commands.Cog):
                             library_stats = {
                                 "count": movie_count + series_count,
                                 "display_name": config.get("display_name", library.get("Name", "Unknown Library")),
-                                "emoji": emoji
+                                "emoji": emoji,
+                                "show_episodes": 1 if config.get("show_episodes", False) else 0  # Convert boolean to integer
                             }
 
                             # Only add episodes if show_episodes is True
