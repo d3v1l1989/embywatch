@@ -664,8 +664,14 @@ class JellyfinCore(commands.Cog):
         # Add library statistics
         library_stats = info.get('library_stats', {})
         if library_stats:
+            # Sort libraries by display_name
+            sorted_libraries = sorted(
+                library_stats.items(),
+                key=lambda x: x[1].get('display_name', '').lower()
+            )
+            
             stats_text = ""
-            for library_id, stats in library_stats.items():
+            for library_id, stats in sorted_libraries:
                 if stats.get('count', 0) > 0:  # Only show libraries with items
                     stats_text += f"{stats.get('emoji', '📁')} **{stats.get('display_name', 'Unknown Library')}**\n"
                     stats_text += f"```css\nTotal Items: {stats.get('count', 0)}\n```\n"
@@ -739,6 +745,9 @@ class JellyfinCore(commands.Cog):
                 return
 
             libraries = response.json()
+            
+            # Sort libraries by name
+            libraries = sorted(libraries, key=lambda x: x.get("Name", "").lower())
             
             # Update config with new libraries
             self.config["jellyfin_sections"]["sections"] = {}
