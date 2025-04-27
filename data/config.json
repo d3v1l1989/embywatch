@@ -6,36 +6,36 @@
         "color": "#00A4DC"
     },
     "jellyfin_sections": {
-        "show_all": false,
+        "show_all": 0,
         "sections": {
             "Movies": {
                 "display_name": "Movies",
                 "emoji": "🎥",
-                "show_episodes": false,
+                "show_episodes": 0,
                 "color": "#FF6B6B"
             },
             "TV Shows": {
                 "display_name": "TV Shows",
                 "emoji": "📺",
-                "show_episodes": true,
+                "show_episodes": 1,
                 "color": "#4ECDC4"
             },
             "Documentaries": {
                 "display_name": "Documentaries",
                 "emoji": "📚",
-                "show_episodes": false,
+                "show_episodes": 0,
                 "color": "#45B7D1"
             },
             "Anime": {
                 "display_name": "Anime",
                 "emoji": "🎌",
-                "show_episodes": true,
+                "show_episodes": 1,
                 "color": "#96CEB4"
             },
             "Music": {
                 "display_name": "Music",
                 "emoji": "🎵",
-                "show_episodes": false,
+                "show_episodes": 0,
                 "color": "#FFEEAD"
             }
         }

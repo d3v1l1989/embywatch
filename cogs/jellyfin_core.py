@@ -208,7 +208,7 @@ class JellyfinCore(commands.Cog):
         """Load configuration from config.json with defaults if unavailable."""
         default_config = {
             "dashboard": {"name": "Jellyfin Dashboard", "icon_url": "", "footer_icon_url": ""},
-            "jellyfin_sections": {"show_all": True, "sections": {}},
+            "jellyfin_sections": {"show_all": 1, "sections": {}},
             "presence": {
                 "sections": [],
                 "offline_text": "🔴 Server Offline!",
@@ -219,6 +219,14 @@ class JellyfinCore(commands.Cog):
         try:
             with open(self.CONFIG_FILE, "r", encoding="utf-8") as f:
                 config = json.load(f)
+                # Convert any boolean values to integers
+                if "jellyfin_sections" in config:
+                    if "show_all" in config["jellyfin_sections"]:
+                        config["jellyfin_sections"]["show_all"] = int(config["jellyfin_sections"]["show_all"])
+                    if "sections" in config["jellyfin_sections"]:
+                        for section in config["jellyfin_sections"]["sections"].values():
+                            if "show_episodes" in section:
+                                section["show_episodes"] = int(section["show_episodes"])
                 return {**default_config, **config}  # Merge with defaults
         except (FileNotFoundError, json.JSONDecodeError) as e:
             self.logger.error(f"Failed to load config: {e}. Using defaults.")
@@ -438,7 +446,7 @@ class JellyfinCore(commands.Cog):
                     library_id = library.get("ItemId")
                     library_name = library.get("Name", "").lower()
                     
-                    if not jellyfin_config["show_all"] and library_id not in configured_sections:
+                    if not int(jellyfin_config["show_all"]) and library_id not in configured_sections:
                         continue
 
                     # Get library configuration
@@ -487,7 +495,7 @@ class JellyfinCore(commands.Cog):
                     # Get item counts
                     params = {
                         "ParentId": library_id,
-                        "Recursive": True,
+                        "Recursive": 1,
                         "IncludeItemTypes": "Movie,Series,Episode"
                     }
                     async with session.get(
@@ -630,10 +638,22 @@ class JellyfinCore(commands.Cog):
         hours = int(offline_duration.total_seconds() / 3600)
         minutes = int((offline_duration.total_seconds() % 3600) / 60)
         
+        # Convert any boolean values in library_cache to integers
+        library_stats = {}
+        for library_id, stats in self.library_cache.items():
+            library_stats[library_id] = {
+                "count": int(stats.get("count", 0)),
+                "display_name": stats.get("display_name", "Unknown Library"),
+                "emoji": stats.get("emoji", "📁"),
+                "show_episodes": int(stats.get("show_episodes", 0))
+            }
+            if "episodes" in stats:
+                library_stats[library_id]["episodes"] = int(stats["episodes"])
+        
         return {
             "status": "🔴 Offline",
             "uptime": f"Offline for {hours:02d}:{minutes:02d}",
-            "library_stats": self.library_cache,
+            "library_stats": library_stats,
             "active_users": [],
             "current_streams": [],
         }
@@ -842,7 +862,7 @@ class JellyfinCore(commands.Cog):
                 return
                 
             first_library = next(iter(sections.values()))
-            current_state = first_library.get("show_episodes", 0)
+            current_state = int(first_library.get("show_episodes", 0))  # Ensure integer
             
             # Log the current state
             self.logger.info(f"Current show_episodes state: {current_state}")
@@ -921,7 +941,7 @@ class JellyfinCore(commands.Cog):
                 "dashboard_channel_id": 0,
                 "jellyfin_sections": {
                     "sections": {},
-                    "show_all": False
+                    "show_all": 1
                 }
             }
             with open(self.CONFIG_FILE, "w", encoding="utf-8") as f:
@@ -934,8 +954,28 @@ class JellyfinCore(commands.Cog):
     def save_config(self) -> None:
         """Save the current configuration to config.json."""
         try:
+            # Create a copy of the config to modify
+            config_to_save = {
+                "dashboard": self.config.get("dashboard", {}),
+                "jellyfin_sections": {
+                    "show_all": int(self.config.get("jellyfin_sections", {}).get("show_all", 1)),
+                    "sections": {}
+                },
+                "presence": self.config.get("presence", {}),
+                "cache": self.config.get("cache", {})
+            }
+            
+            # Convert any boolean values to integers in sections
+            for library_id, section in self.config.get("jellyfin_sections", {}).get("sections", {}).items():
+                config_to_save["jellyfin_sections"]["sections"][library_id] = {
+                    "display_name": section.get("display_name", "Unknown Library"),
+                    "emoji": section.get("emoji", "📁"),
+                    "color": section.get("color", "#00A4DC"),
+                    "show_episodes": int(section.get("show_episodes", 0))
+                }
+            
             with open(self.CONFIG_FILE, "w", encoding="utf-8") as f:
-                json.dump(self.config, f, indent=4)
+                json.dump(config_to_save, f, indent=4)
         except Exception as e:
             self.logger.error(f"Error saving config file: {e}")
             raise
