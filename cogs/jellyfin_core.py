@@ -506,11 +506,11 @@ class JellyfinCore(commands.Cog):
                                 "count": movie_count + series_count,
                                 "display_name": config.get("display_name", library.get("Name", "Unknown Library")),
                                 "emoji": emoji,
-                                "show_episodes": 1 if config.get("show_episodes", False) else 0  # Convert boolean to integer
+                                "show_episodes": int(config.get("show_episodes", 0))  # Ensure integer
                             }
 
-                            # Only add episodes if show_episodes is True
-                            if config.get("show_episodes", False):
+                            # Only add episodes if show_episodes is 1
+                            if int(config.get("show_episodes", 0)) == 1:
                                 library_stats["episodes"] = episode_count
 
                             stats[library_id] = library_stats
@@ -680,8 +680,8 @@ class JellyfinCore(commands.Cog):
                 if stats.get('count', 0) > 0:  # Only show libraries with items
                     stats_text += f"{stats.get('emoji', '📁')} **{stats.get('display_name', 'Unknown Library')}**\n"
                     stats_text += f"```css\nTotal Items: {stats.get('count', 0)}\n```\n"
-                    # Only show episodes if the key exists in the stats and the count is greater than 0
-                    if 'episodes' in stats and stats['episodes'] > 0:
+                    # Only show episodes if show_episodes is 1 and episodes count exists
+                    if int(stats.get('show_episodes', 0)) == 1 and 'episodes' in stats:
                         stats_text += f"```css\nEpisodes: {stats['episodes']}\n```\n"
             if stats_text:  # Only add the field if there are libraries to show
                 embed.add_field(
