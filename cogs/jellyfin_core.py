@@ -453,44 +453,11 @@ class JellyfinCore(commands.Cog):
                     config = configured_sections.get(library_id, {
                         "display_name": library.get("Name", "Unknown Library"),
                         "emoji": LIBRARY_EMOJIS["default"],
-                        "show_episodes": 0  # Convert boolean to integer
+                        "show_episodes": 0
                     })
 
-                    # Find matching emoji based on library name with priority
-                    emoji = LIBRARY_EMOJIS["default"]
-                    best_match_length = 0
-                    best_match_key = None
-                    
-                    # First pass: find all matches
-                    matches = []
-                    library_name_lower = library_name.lower()
-                    for key, value in LIBRARY_EMOJIS.items():
-                        if key == "default":
-                            continue
-                        if key in library_name_lower:
-                            matches.append((key, value, len(key), key in GENERIC_TERMS))
-                    
-                    # Second pass: find the best non-generic match
-                    for key, value, length, is_generic in matches:
-                        if not is_generic and length > best_match_length:
-                            best_match_length = length
-                            best_match_key = key
-                            emoji = value
-                    
-                    # If no non-generic match was found, use the best match overall
-                    if best_match_key is None and matches:
-                        best_match_length = max(length for _, _, length, _ in matches)
-                        for key, value, length, _ in matches:
-                            if length == best_match_length:
-                                emoji = value
-                                break
-                    
-                    # If we found a match in the config, use that instead
-                    if config.get("emoji"):
-                        emoji = config["emoji"]
-                    
-                    # Log the emoji selection for debugging
-                    self.logger.debug(f"Library '{library_name}' matched with emoji '{emoji}' (best match: '{best_match_key}')")
+                    # Use the configured emoji directly
+                    emoji = config.get("emoji", LIBRARY_EMOJIS["default"])
 
                     # Get item counts
                     params = {
@@ -717,9 +684,10 @@ class JellyfinCore(commands.Cog):
                     inline=False
                 )
         
-        # Set footer with JellyfinWatch branding
+        # Set footer with JellyfinWatch branding and timestamp
+        current_time = datetime.now().strftime("%H:%M:%S")
         embed.set_footer(
-            text="Powered by JellyfinWatch",
+            text=f"Powered by JellyfinWatch | Last updated at {current_time}",
             icon_url="https://static-00.iconduck.com/assets.00/jellyfin-icon-96x96-h2vkd1yr.png"
         )
         
@@ -821,8 +789,8 @@ class JellyfinCore(commands.Cog):
                 # Log the emoji selection for debugging
                 self.logger.debug(f"Library '{library_name}' matched with emoji '{emoji}' (best match: '{best_match_key}')")
                 
-                # Convert boolean to integer for show_episodes
-                show_episodes = 1 if any(keyword in library_name for keyword in ["tv", "television", "shows", "series", "anime"]) else 0
+                # Always set show_episodes to 0 by default
+                show_episodes = 0
                 
                 self.config["jellyfin_sections"]["sections"][library_id] = {
                     "display_name": library.get("Name", "Unknown Library"),
