@@ -877,16 +877,36 @@ class JellyfinCore(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         
         try:
+            self.logger.info("Starting dashboard refresh...")
+            
             # Get server info and update dashboard
+            self.logger.info("Attempting to get server info...")
             info = await self.get_server_info()
+            if not info:
+                self.logger.error("Failed to get server info - empty response")
+                await interaction.followup.send("❌ Failed to get server information. Check bot logs for details.", ephemeral=True)
+                return
+                
+            self.logger.info(f"Got server info: {info.get('server_name', 'Unknown Server')}")
+            
+            self.logger.info(f"Getting channel with ID: {self.CHANNEL_ID}")
             channel = self.bot.get_channel(self.CHANNEL_ID)
+            if not channel:
+                self.logger.error(f"Channel {self.CHANNEL_ID} not found")
+                await interaction.followup.send("❌ Dashboard channel not found. Check CHANNEL_ID in config.", ephemeral=True)
+                return
+                
+            self.logger.info("Creating dashboard embed...")
             embed = await self.create_dashboard_embed(info)
+            
+            self.logger.info("Updating dashboard message...")
             await self._update_dashboard_message(channel, embed)
             
+            self.logger.info("Dashboard refresh completed successfully")
             await interaction.followup.send("✅ Dashboard refreshed successfully!", ephemeral=True)
             
         except Exception as e:
-            self.logger.error(f"Error refreshing dashboard: {e}")
+            self.logger.error(f"Error refreshing dashboard: {str(e)}", exc_info=True)
             await interaction.followup.send(f"❌ Error refreshing dashboard: {str(e)}", ephemeral=True)
 
     @app_commands.command(name="sync", description="Sync slash commands with Discord")
