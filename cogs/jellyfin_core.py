@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from discord import app_commands
 from main import is_authorized
 import asyncio
+import aiohttp
 
 # Library name to emoji mapping with priority order
 LIBRARY_EMOJIS = {
@@ -357,32 +358,32 @@ class JellyfinCore(commands.Cog):
                 "X-Emby-Authorization": "MediaBrowser Client=\"JellyWatch\", Device=\"JellyWatch\", DeviceId=\"jellywatch-bot\", Version=\"1.0.0\""
             }
 
-            # Get system info
-            response = requests.get(f"{self.JELLYFIN_URL}/System/Info", headers=headers)
-            if response.status_code != 200:
-                return {}
+            async with aiohttp.ClientSession() as session:
+                # Get system info
+                async with session.get(f"{self.JELLYFIN_URL}/System/Info", headers=headers) as response:
+                    if response.status != 200:
+                        return {}
+                    system_info = await response.json()
+                
+                # Get sessions
+                sessions = await self.get_sessions()
+                current_streams = len([s for s in sessions if s.get("NowPlayingItem")]) if sessions else 0
 
-            system_info = response.json()
-            
-            # Get sessions
-            sessions = self.get_sessions()
-            current_streams = len([s for s in sessions if s.get("NowPlayingItem")]) if sessions else 0
+                # Get library stats
+                library_stats = await self.get_library_stats()
+                total_items = sum(int(stats.get("count", 0)) for stats in library_stats.values())
+                total_episodes = sum(int(episodes) for stats in library_stats.values() 
+                                   if (episodes := stats.get("episodes")) is not None)
 
-            # Get library stats
-            library_stats = self.get_library_stats()
-            total_items = sum(int(stats.get("count", 0)) for stats in library_stats.values())
-            total_episodes = sum(int(episodes) for stats in library_stats.values() 
-                               if (episodes := stats.get("episodes")) is not None)
-
-            return {
-                "server_name": system_info.get("ServerName", "Unknown Server"),
-                "version": system_info.get("Version", "Unknown Version"),
-                "operating_system": system_info.get("OperatingSystem", "Unknown OS"),
-                "current_streams": current_streams,
-                "total_items": total_items,
-                "total_episodes": total_episodes,
-                "library_stats": library_stats
-            }
+                return {
+                    "server_name": system_info.get("ServerName", "Unknown Server"),
+                    "version": system_info.get("Version", "Unknown Version"),
+                    "operating_system": system_info.get("OperatingSystem", "Unknown OS"),
+                    "current_streams": current_streams,
+                    "total_items": total_items,
+                    "total_episodes": total_episodes,
+                    "library_stats": library_stats
+                }
         except Exception as e:
             self.logger.error(f"Error getting server info: {e}")
             return {}
@@ -396,7 +397,7 @@ class JellyfinCore(commands.Cog):
         minutes = total_minutes % 60
         return "99+ Hours" if hours > 99 else f"{hours:02d}:{minutes:02d}"
 
-    def get_library_stats(self) -> Dict[str, Dict[str, Any]]:
+    async def get_library_stats(self) -> Dict[str, Dict[str, Any]]:
         """Fetch and cache Jellyfin library statistics."""
         current_time = datetime.now()
         if (
@@ -419,99 +420,99 @@ class JellyfinCore(commands.Cog):
                 "X-Emby-Authorization": "MediaBrowser Client=\"JellyWatch\", Device=\"JellyWatch\", DeviceId=\"jellywatch-bot\", Version=\"1.0.0\""
             }
             
-            # Get all libraries
-            response = requests.get(f"{self.JELLYFIN_URL}/Library/VirtualFolders", headers=headers)
-            if response.status_code != 200:
-                self.logger.error(f"Failed to get library folders: HTTP {response.status_code}")
-                return self.library_cache
+            async with aiohttp.ClientSession() as session:
+                # Get all libraries
+                async with session.get(f"{self.JELLYFIN_URL}/Library/VirtualFolders", headers=headers) as response:
+                    if response.status != 200:
+                        self.logger.error(f"Failed to get library folders: HTTP {response.status}")
+                        return self.library_cache
+                    libraries = await response.json()
 
-            libraries = response.json()
-            stats: Dict[str, Dict[str, Any]] = {}
-            jellyfin_config = self.config["jellyfin_sections"]
-            configured_sections = jellyfin_config["sections"]
+                stats: Dict[str, Dict[str, Any]] = {}
+                jellyfin_config = self.config["jellyfin_sections"]
+                configured_sections = jellyfin_config["sections"]
 
-            for library in libraries:
-                library_id = library.get("ItemId")
-                library_name = library.get("Name", "").lower()
-                
-                if not jellyfin_config["show_all"] and library_id not in configured_sections:
-                    continue
-
-                # Get library configuration
-                config = configured_sections.get(library_id, {
-                    "display_name": library.get("Name", "Unknown Library"),
-                    "emoji": LIBRARY_EMOJIS["default"],
-                    "show_episodes": False
-                })
-
-                # Find matching emoji based on library name with priority
-                emoji = LIBRARY_EMOJIS["default"]
-                best_match_length = 0
-                best_match_key = None
-                
-                # First pass: find all matches
-                matches = []
-                library_name_lower = library_name.lower()
-                for key, value in LIBRARY_EMOJIS.items():
-                    if key == "default":
+                for library in libraries:
+                    library_id = library.get("ItemId")
+                    library_name = library.get("Name", "").lower()
+                    
+                    if not jellyfin_config["show_all"] and library_id not in configured_sections:
                         continue
-                    if key in library_name_lower:
-                        matches.append((key, value, len(key), key in GENERIC_TERMS))
-                
-                # Second pass: find the best non-generic match
-                for key, value, length, is_generic in matches:
-                    if not is_generic and length > best_match_length:
-                        best_match_length = length
-                        best_match_key = key
-                        emoji = value
-                
-                # If no non-generic match was found, use the best match overall
-                if best_match_key is None and matches:
-                    best_match_length = max(length for _, _, length, _ in matches)
-                    for key, value, length, _ in matches:
-                        if length == best_match_length:
+
+                    # Get library configuration
+                    config = configured_sections.get(library_id, {
+                        "display_name": library.get("Name", "Unknown Library"),
+                        "emoji": LIBRARY_EMOJIS["default"],
+                        "show_episodes": False
+                    })
+
+                    # Find matching emoji based on library name with priority
+                    emoji = LIBRARY_EMOJIS["default"]
+                    best_match_length = 0
+                    best_match_key = None
+                    
+                    # First pass: find all matches
+                    matches = []
+                    library_name_lower = library_name.lower()
+                    for key, value in LIBRARY_EMOJIS.items():
+                        if key == "default":
+                            continue
+                        if key in library_name_lower:
+                            matches.append((key, value, len(key), key in GENERIC_TERMS))
+                    
+                    # Second pass: find the best non-generic match
+                    for key, value, length, is_generic in matches:
+                        if not is_generic and length > best_match_length:
+                            best_match_length = length
+                            best_match_key = key
                             emoji = value
-                            break
-                
-                # If we found a match in the config, use that instead
-                if config.get("emoji"):
-                    emoji = config["emoji"]
-                
-                # Log the emoji selection for debugging
-                self.logger.debug(f"Library '{library_name}' matched with emoji '{emoji}' (best match: '{best_match_key}')")
+                    
+                    # If no non-generic match was found, use the best match overall
+                    if best_match_key is None and matches:
+                        best_match_length = max(length for _, _, length, _ in matches)
+                        for key, value, length, _ in matches:
+                            if length == best_match_length:
+                                emoji = value
+                                break
+                    
+                    # If we found a match in the config, use that instead
+                    if config.get("emoji"):
+                        emoji = config["emoji"]
+                    
+                    # Log the emoji selection for debugging
+                    self.logger.debug(f"Library '{library_name}' matched with emoji '{emoji}' (best match: '{best_match_key}')")
 
-                # Get item counts
-                params = {
-                    "ParentId": library_id,
-                    "Recursive": True,
-                    "IncludeItemTypes": "Movie,Series,Episode"
-                }
-                items_response = requests.get(
-                    f"{self.JELLYFIN_URL}/Items",
-                    headers=headers,
-                    params=params
-                )
-                
-                if items_response.status_code == 200:
-                    items = items_response.json()
-                    movie_count = sum(1 for item in items["Items"] if item["Type"] == "Movie")
-                    series_count = sum(1 for item in items["Items"] if item["Type"] == "Series")
-                    episode_count = sum(1 for item in items["Items"] if item["Type"] == "Episode")
-
-                    # Create base stats dictionary
-                    library_stats = {
-                        "count": movie_count + series_count,
-                        "display_name": config.get("display_name", library.get("Name", "Unknown Library")),
-                        "emoji": emoji
+                    # Get item counts
+                    params = {
+                        "ParentId": library_id,
+                        "Recursive": True,
+                        "IncludeItemTypes": "Movie,Series,Episode"
                     }
+                    async with session.get(
+                        f"{self.JELLYFIN_URL}/Items",
+                        headers=headers,
+                        params=params
+                    ) as items_response:
+                        if items_response.status == 200:
+                            items = await items_response.json()
+                            movie_count = sum(1 for item in items["Items"] if item["Type"] == "Movie")
+                            series_count = sum(1 for item in items["Items"] if item["Type"] == "Series")
+                            episode_count = sum(1 for item in items["Items"] if item["Type"] == "Episode")
 
-                    # Only add episodes if show_episodes is True
-                    if config.get("show_episodes", False):
-                        library_stats["episodes"] = episode_count
+                            # Create base stats dictionary
+                            library_stats = {
+                                "count": movie_count + series_count,
+                                "display_name": config.get("display_name", library.get("Name", "Unknown Library")),
+                                "emoji": emoji
+                            }
 
-                    stats[library_id] = library_stats
-                else:
-                    self.logger.error(f"Failed to get items for library {library_name}: HTTP {items_response.status_code}")
+                            # Only add episodes if show_episodes is True
+                            if config.get("show_episodes", False):
+                                library_stats["episodes"] = episode_count
+
+                            stats[library_id] = library_stats
+                        else:
+                            self.logger.error(f"Failed to get items for library {library_name}: HTTP {items_response.status}")
 
             self.library_cache = stats
             self.last_library_update = current_time
