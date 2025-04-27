@@ -744,12 +744,13 @@ class JellyfinCore(commands.Cog):
                 "X-Emby-Authorization": "MediaBrowser Client=\"JellyWatch\", Device=\"JellyWatch\", DeviceId=\"jellywatch-bot\", Version=\"1.0.0\""
             }
             
-            response = requests.get(f"{self.JELLYFIN_URL}/Library/VirtualFolders", headers=headers)
-            if response.status_code != 200:
-                await interaction.followup.send("❌ Failed to fetch libraries from Jellyfin.", ephemeral=True)
-                return
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{self.JELLYFIN_URL}/Library/VirtualFolders", headers=headers) as response:
+                    if response.status != 200:
+                        await interaction.followup.send("❌ Failed to fetch libraries from Jellyfin.", ephemeral=True)
+                        return
 
-            libraries = response.json()
+                    libraries = await response.json()
             
             # Sort libraries by name
             libraries = sorted(libraries, key=lambda x: x.get("Name", "").lower())
@@ -793,11 +794,14 @@ class JellyfinCore(commands.Cog):
                 # Log the emoji selection for debugging
                 self.logger.debug(f"Library '{library_name}' matched with emoji '{emoji}' (best match: '{best_match_key}')")
                 
+                # Convert boolean to integer for show_episodes
+                show_episodes = 1 if any(keyword in library_name for keyword in ["tv", "television", "shows", "series", "anime"]) else 0
+                
                 self.config["jellyfin_sections"]["sections"][library_id] = {
                     "display_name": library.get("Name", "Unknown Library"),
                     "emoji": emoji,
                     "color": "#00A4DC",
-                    "show_episodes": True if any(keyword in library_name for keyword in ["tv", "television", "shows", "series", "anime"]) else False
+                    "show_episodes": show_episodes  # Use integer instead of boolean
                 }
 
             # Save updated config
@@ -827,7 +831,7 @@ class JellyfinCore(commands.Cog):
         
         try:
             # Get current state from any library (they should all be the same)
-            current_state = False
+            current_state = 0
             sections = self.config["jellyfin_sections"]["sections"]
             
             if not sections:
@@ -838,13 +842,13 @@ class JellyfinCore(commands.Cog):
                 return
                 
             first_library = next(iter(sections.values()))
-            current_state = first_library.get("show_episodes", False)
+            current_state = first_library.get("show_episodes", 0)
             
             # Log the current state
             self.logger.info(f"Current show_episodes state: {current_state}")
             
             # Toggle the show_episodes setting for all libraries
-            new_state = not current_state
+            new_state = 1 if current_state == 0 else 0
             for library_id, library_config in sections.items():
                 library_config["show_episodes"] = new_state
                 self.logger.info(f"Updated library {library_id} show_episodes to {new_state}")
@@ -863,7 +867,7 @@ class JellyfinCore(commands.Cog):
             await self._update_dashboard_message(channel, embed)
             
             await interaction.followup.send(
-                f"✅ Episode numbers display has been {'enabled' if new_state else 'disabled'}!",
+                f"✅ Episode numbers display has been {'enabled' if new_state == 1 else 'disabled'}!",
                 ephemeral=True
             )
             
