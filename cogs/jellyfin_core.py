@@ -495,8 +495,9 @@ class JellyfinCore(commands.Cog):
                     # Get item counts
                     params = {
                         "ParentId": library_id,
-                        "Recursive": 1,
-                        "IncludeItemTypes": "Movie,Series,Episode"
+                        "Recursive": "true",
+                        "IncludeItemTypes": "Movie,Series,Episode",
+                        "Fields": "BasicSyncInfo,MediaSources"
                     }
                     async with session.get(
                         f"{self.JELLYFIN_URL}/Items",
@@ -523,7 +524,13 @@ class JellyfinCore(commands.Cog):
 
                             stats[library_id] = library_stats
                         else:
+                            # Get the response body for more detailed error information
+                            error_body = await items_response.text()
                             self.logger.error(f"Failed to get items for library {library_name}: HTTP {items_response.status}")
+                            self.logger.error(f"Error response body: {error_body}")
+                            self.logger.error(f"Request URL: {items_response.url}")
+                            self.logger.error(f"Request headers: {headers}")
+                            self.logger.error(f"Request params: {params}")
 
             self.library_cache = stats
             self.last_library_update = current_time
