@@ -316,7 +316,7 @@ class JellyfinCore(commands.Cog):
     async def update_status(self) -> None:
         """Update bot's status with current stream count."""
         try:
-            sessions = self.get_sessions()
+            sessions = await self.get_sessions()
             current_streams = len(sessions) if sessions else 0
             activity = discord.Activity(
                 type=discord.ActivityType.watching,
@@ -347,7 +347,7 @@ class JellyfinCore(commands.Cog):
     async def get_server_info(self) -> Dict[str, Any]:
         """Get server information from Jellyfin."""
         try:
-            if not self.connect_to_jellyfin():
+            if not await self.connect_to_jellyfin():
                 return {}
 
             headers = {
@@ -408,7 +408,7 @@ class JellyfinCore(commands.Cog):
         ):
             return self.library_cache
 
-        if not self.connect_to_jellyfin():
+        if not await self.connect_to_jellyfin():
             return self.library_cache
 
         try:
@@ -526,7 +526,7 @@ class JellyfinCore(commands.Cog):
 
     async def get_sessions(self) -> List[Dict[str, Any]]:
         """Get current Jellyfin sessions."""
-        if not self.connect_to_jellyfin():
+        if not await self.connect_to_jellyfin():
             return []
 
         try:
@@ -728,7 +728,7 @@ class JellyfinCore(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         
         try:
-            if not self.connect_to_jellyfin():
+            if not await self.connect_to_jellyfin():
                 await interaction.followup.send("❌ Failed to connect to Jellyfin server.", ephemeral=True)
                 return
 
