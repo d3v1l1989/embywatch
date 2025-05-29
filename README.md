@@ -1,6 +1,6 @@
-# JellyfinWatch 🎬
+# EmbyWatch 🎬
 
-A Discord bot that monitors your Jellyfin server and displays real-time statistics in a beautiful dashboard. Built with Python and Discord.py.
+A Discord bot that monitors your Emby server and displays real-time statistics in a beautiful dashboard. Built with Python and Discord.py.
 
 ## ✨ Features
 
@@ -10,8 +10,8 @@ A Discord bot that monitors your Jellyfin server and displays real-time statisti
 - 🎥 Currently playing content tracking
 - ⚙️ Customizable dashboard appearance
 - 🔄 Automatic updates every 60 seconds
-- 🎨 Beautiful embed design with Jellyfin branding
-- 🔒 Secure authentication with Jellyfin API
+- 🎨 Beautiful embed design with Emby branding
+- 🔒 Secure authentication with Emby API
 - 🛠️ Easy setup and configuration
 - 🎌 Smart emoji detection for different content types
 - 🔄 Cog management system for modular functionality
@@ -26,7 +26,7 @@ A Discord bot that monitors your Jellyfin server and displays real-time statisti
 
 - Python 3.8 or higher
 - Discord Bot Token
-- Jellyfin Server URL and API Key
+- Emby Server URL and API Key
 - Discord Server with admin permissions
 
 ### Creating a Discord Bot
@@ -55,8 +55,8 @@ A Discord bot that monitors your Jellyfin server and displays real-time statisti
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/d3v1l1989/JellyfinWatch.git
-cd JellyfinWatch
+git clone https://github.com/d3v1l1989/embywatch.git
+cd embywatch
 ```
 
 2. Install dependencies:
@@ -67,10 +67,10 @@ pip install -r requirements.txt
 3. Configure your environment variables in `.env`:
 ```env
 DISCORD_TOKEN=your_discord_bot_token
-JELLYFIN_URL=your_jellyfin_server_url
-JELLYFIN_API_KEY=your_jellyfin_api_key
-JELLYFIN_USERNAME=your_jellyfin_username
-JELLYFIN_PASSWORD=your_jellyfin_password
+EMBY_URL=your_emby_server_url
+EMBY_API_KEY=your_emby_api_key
+EMBY_USERNAME=your_emby_username
+EMBY_PASSWORD=your_emby_password
 CHANNEL_ID=your_discord_channel_id
 DISCORD_AUTHORIZED_USERS=user_id1,user_id2
 RUNNING_IN_DOCKER=false
@@ -88,17 +88,17 @@ python main.py
 version: '3.8'
 
 services:
-  jellywatch:
-    image: ghcr.io/d3v1l1989/jellyfinwatch:latest
-    container_name: jellywatch
+  embywatch:
+    image: ghcr.io/d3v1l1989/embywatch:latest
+    container_name: embywatch
     restart: unless-stopped
     user: "1000:1000"
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - JELLYFIN_URL=${JELLYFIN_URL}
-      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
-      - JELLYFIN_USERNAME=${JELLYFIN_USERNAME}
-      - JELLYFIN_PASSWORD=${JELLYFIN_PASSWORD}
+      - EMBY_URL=${EMBY_URL}
+      - EMBY_API_KEY=${EMBY_API_KEY}
+      - EMBY_USERNAME=${EMBY_USERNAME}
+      - EMBY_PASSWORD=${EMBY_PASSWORD}
       - CHANNEL_ID=${CHANNEL_ID}
       - DISCORD_AUTHORIZED_USERS=${DISCORD_AUTHORIZED_USERS}
       - RUNNING_IN_DOCKER=true
@@ -130,10 +130,10 @@ docker compose up -d
 The bot uses a `.env` file for configuration. Here are the available options:
 
 - `DISCORD_TOKEN`: Your Discord bot token
-- `JELLYFIN_URL`: Your Jellyfin server URL
-- `JELLYFIN_API_KEY`: Your Jellyfin API key
-- `JELLYFIN_USERNAME`: Your Jellyfin username
-- `JELLYFIN_PASSWORD`: Your Jellyfin password
+- `EMBY_URL`: Your Emby server URL
+- `EMBY_API_KEY`: Your Emby API key
+- `EMBY_USERNAME`: Your Emby username
+- `EMBY_PASSWORD`: Your Emby password
 - `CHANNEL_ID`: The Discord channel ID where the dashboard will be displayed
 - `DISCORD_AUTHORIZED_USERS`: Comma-separated list of Discord user IDs authorized to use admin commands
 - `RUNNING_IN_DOCKER`: Set to "true" if running in Docker, "false" otherwise
@@ -141,10 +141,12 @@ The bot uses a `.env` file for configuration. Here are the available options:
 ## 🤖 Commands
 
 ### Admin Commands
-- `/update_libraries` - Update library sections in the dashboard
-- `/episodes` - Toggle display of episode counts in library stats
-- `/refresh` - Refresh the dashboard embed immediately
-- `/sync` - Sync slash commands with Discord
+- `/update_libraries` - Update Emby library sections in the dashboard
+- `/episodes` - Toggle display of Emby episode counts in library stats
+- `/refresh` - Refresh the Emby dashboard embed immediately
+- `/test_connection` - Test connection to the Emby server
+- `/test-libraries` - Test Emby library statistics retrieval
+- `/sync` - Sync Emby dashboard slash commands with Discord
 - `/load` - Load a specific cog (admin only)
 - `/unload` - Unload a specific cog (admin only)
 - `/reload` - Reload a specific cog (admin only)
@@ -152,9 +154,22 @@ The bot uses a `.env` file for configuration. Here are the available options:
 
 ## 🎨 Dashboard Features
 
-The dashboard provides real-time information about your Jellyfin server, including:
+The dashboard provides real-time information about your Emby server, including:
 - Server status and uptime
 - Active streams count
 - Library statistics with smart emoji detection
 - Episode counts for TV shows and anime libraries
-- Beautiful Jellyfin-themed design
+- Beautiful Emby-themed design with official Emby green color scheme
+
+## 🧪 Testing and Verification
+
+EmbyWatch includes testing scripts to verify Emby API integration and command functionality:
+
+- `test_commands.py` - Tests slash command registration and descriptions
+- `verify_emby_commands.py` - Verifies Emby API integration by testing real API calls
+
+Run the verification script to ensure everything is working correctly:
+
+```bash
+python verify_emby_commands.py
+```

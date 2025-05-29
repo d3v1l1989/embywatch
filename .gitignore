@@ -3,3 +3,6 @@
 __pycache__/
 data/dashboard_message_id.json
 /.venv
+PLANNING.md
+TASK.md
+RELEASE_CHECKLIST.md

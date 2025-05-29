@@ -1,20 +1,20 @@
 version: '3.8'
 
 services:
-  jellywatch:
-    image: ghcr.io/d3v1l1989/jellyfinwatch:latest
-    container_name: jellywatch
+  embywatch:
+    image: ghcr.io/d3v1l1989/embywatch:latest
+    container_name: embywatch
     restart: unless-stopped
     user: "1000:1000"
     environment:
       - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - JELLYFIN_URL=${JELLYFIN_URL}
-      - JELLYFIN_API_KEY=${JELLYFIN_API_KEY}
-      - JELLYFIN_USERNAME=${JELLYFIN_USERNAME}
-      - JELLYFIN_PASSWORD=${JELLYFIN_PASSWORD}
+      - EMBY_URL=${EMBY_URL}
+      - EMBY_API_KEY=${EMBY_API_KEY}
+      - EMBY_USERNAME=${EMBY_USERNAME}
+      - EMBY_PASSWORD=${EMBY_PASSWORD}
       - CHANNEL_ID=${CHANNEL_ID}
       - DISCORD_AUTHORIZED_USERS=${DISCORD_AUTHORIZED_USERS}
       - RUNNING_IN_DOCKER=true
     volumes:
       - ./data:/app/data
-      - ./logs:/app/logs 
+      - ./logs:/app/logs

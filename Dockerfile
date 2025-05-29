@@ -1,5 +1,11 @@
 FROM python:3-alpine
 
+LABEL org.opencontainers.image.title="EmbyWatch"
+LABEL org.opencontainers.image.description="A Discord bot that monitors your Emby server and displays real-time statistics"
+LABEL org.opencontainers.image.version="1.0.0"
+LABEL org.opencontainers.image.created="2025-05-29"
+LABEL org.opencontainers.image.url="https://github.com/d3v1l1989/embywatch"
+
 WORKDIR /app
 
 # Copy requirements first to leverage Docker cache

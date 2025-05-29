@@ -1,11 +1,11 @@
 {
     "dashboard": {
-        "name": "Jellyfin Dashboard",
-        "icon_url": "https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/icon-transparent.svg",
-        "footer_icon_url": "https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/icon-transparent.svg",
-        "color": "#00A4DC"
+        "name": "Emby Dashboard",
+        "icon_url": "https://emby.media/resources/Emby_icon_512.png",
+        "footer_icon_url": "https://emby.media/resources/Emby_icon_128.png",
+        "color": "#52B54B"
     },
-    "jellyfin_sections": {
+    "emby_sections": {
         "show_all": 0,
         "sections": {
             "Movies": {
