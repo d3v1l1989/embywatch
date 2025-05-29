@@ -366,6 +366,7 @@ class EmbyCore(commands.Cog):
     @tasks.loop(seconds=30)
     async def update_status(self) -> None:
         """Update bot's status with current stream count."""
+        self.logger.info("DEBUG: Entered NEW update_status method V4 - API call for sessions.")
         try:
             if not await self.connect_to_emby():
                 self.logger.warning("Cannot update status, Emby connection failed.")
@@ -1149,6 +1150,38 @@ class EmbyCore(commands.Cog):
         except Exception as e:
             self.logger.error(f"Error saving config file: {e}")
             raise
+
+    async def get_sessions(self) -> List[Dict[str, Any]]:
+        """Get current Emby sessions."""
+        if not await self.connect_to_emby():
+            return []
+
+        try:
+            headers = {
+                "X-Emby-Token": self.EMBY_API_KEY,
+                "X-Emby-Client": "EmbyWatch",
+                "X-Emby-Client-Version": "1.0.0",
+                "X-Emby-Device-Name": "EmbyWatch",
+                "X-Emby-Device-Id": "embywatch-bot",
+                "Accept": "application/json",
+                "X-Emby-Authorization": "MediaBrowser Client=\"EmbyWatch\", Device=\"EmbyWatch\", DeviceId=\"embywatch-bot\", Version=\"1.0.0\""
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{self.EMBY_URL}/Sessions", headers=headers) as response:
+                    if response.status == 200:
+                        sessions = await response.json()
+                        self.logger.debug(f"Retrieved {len(sessions)} session items from Emby.")
+                        return sessions
+                    elif response.status == 401:
+                        self.logger.error("Invalid API key when fetching sessions")
+                        return []
+                    else:
+                        self.logger.error(f"Failed to get sessions: HTTP {response.status}")
+                        return []
+        except Exception as e:
+            self.logger.error(f"Error getting sessions: {e}")
+            return []
 
     # Duplicate test-libraries command removed from here
 
