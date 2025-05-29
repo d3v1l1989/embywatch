@@ -803,6 +803,7 @@ class EmbyCore(commands.Cog):
         current_time = datetime.now().strftime("%H:%M:%S")
         # Use footer icon from config if available, otherwise use default
         footer_icon = self.config.get("dashboard", {}).get("footer_icon_url", EMBY_LOGO_SMALL)
+        self.logger.info(f"Using footer icon URL: {footer_icon}")
         embed.set_footer(
             text=f"Powered by EmbyWatch | Last updated at {current_time}",
             icon_url=footer_icon
