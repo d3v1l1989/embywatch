@@ -367,15 +367,43 @@ class EmbyCore(commands.Cog):
     async def update_status(self) -> None:
         """Update bot's status with current stream count."""
         try:
-            sessions = await self.get_sessions()
-            current_streams = len(sessions) if sessions else 0
+            if not await self.connect_to_emby():
+                self.logger.warning("Cannot update status, Emby connection failed.")
+                await self.bot.change_presence(activity=discord.Game(name="Emby Offline"))
+                return
+
+            headers = {
+                "X-Emby-Token": self.auth_token,
+                "X-Emby-Client": "EmbyWatch",
+                "X-Emby-Client-Version": "1.0.0",
+                "X-Emby-Device-Name": "EmbyWatch",
+                "X-Emby-Device-Id": "embywatch-bot",
+                "Accept": "application/json",
+            }
+            
+            sessions_data = None
+            async with aiohttp.ClientSession() as http_session:
+                async with http_session.get(f"{self.EMBY_URL}/Sessions", headers=headers) as response:
+                    if response.status == 200:
+                        sessions_data = await response.json()
+                        if not isinstance(sessions_data, list):
+                            self.logger.error(f"Sessions endpoint did not return a list for status update: {type(sessions_data)}")
+                            sessions_data = None 
+                    else:
+                        self.logger.error(f"Failed to get sessions for status update: HTTP {response.status} - {await response.text()}")
+            
+            current_streams = len(sessions_data) if sessions_data else 0
             activity = discord.Activity(
                 type=discord.ActivityType.watching,
                 name=f"{current_streams} stream{'s' if current_streams != 1 else ''}"
             )
             await self.bot.change_presence(activity=activity)
         except Exception as e:
-            self.logger.error(f"Error updating status: {e}")
+            self.logger.error(f"Error updating status: {e}", exc_info=True)
+            try:
+                await self.bot.change_presence(activity=discord.Game(name="Status Error"))
+            except Exception as presence_e:
+                self.logger.error(f"Failed to set error presence: {presence_e}")
 
     @tasks.loop(seconds=60)
     async def update_dashboard(self) -> None:
@@ -1112,7 +1140,7 @@ class EmbyCore(commands.Cog):
                 config_to_save["emby_sections"]["sections"][library_id] = {
                     "display_name": section.get("display_name", "Unknown Library"),
                     "emoji": section.get("emoji", "📁"),
-                    "color": section.get("color", "#00A4DC"),
+                    "color": str(section.get("color", "#00A4DC")),
                     "show_episodes": int(section.get("show_episodes", 0))
                 }
             
