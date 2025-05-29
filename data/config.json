@@ -2,7 +2,7 @@
     "dashboard": {
         "name": "Emby Dashboard",
         "icon_url": "https://emby.media/resources/Emby_icon_512.png",
-        "footer_icon_url": "https://emby.media/resources/Emby_icon_512.png",
+        "footer_icon_url": "https://open-store.io/icons/emby.bhdouglass/emby.bhdouglass-1.0.7.png",
         "color": "#52B54B"
     },
     "emby_sections": {
