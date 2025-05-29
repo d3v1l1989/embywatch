@@ -26,7 +26,7 @@ A Discord bot that monitors your Emby server and displays real-time statistics i
 
 - Python 3.8 or higher
 - Discord Bot Token
-- Emby Server URL and API Key
+- Emby Server URL, API Key, Username, Password
 - Discord Server with admin permissions
 
 ### Creating a Discord Bot
@@ -115,15 +115,17 @@ mkdir -p data logs
 # Set correct permissions
 sudo chown -R 1000:1000 data logs
 
-# Copy and edit environment file
-cp .env.example .env
-nano .env  # Edit with your configuration
+# Create and edit environment file
+
+nano .env  # Edit with your configuration, use example above as template
 ```
 
 3. Start the container:
 ```bash
 docker compose up -d
 ```
+4. Use /update_libraries command to update libraries after EmbyWatch starts
+
 
 ## 🛠️ Configuration
 
@@ -160,16 +162,3 @@ The dashboard provides real-time information about your Emby server, including:
 - Library statistics with smart emoji detection
 - Episode counts for TV shows and anime libraries
 - Beautiful Emby-themed design with official Emby green color scheme
-
-## 🧪 Testing and Verification
-
-EmbyWatch includes testing scripts to verify Emby API integration and command functionality:
-
-- `test_commands.py` - Tests slash command registration and descriptions
-- `verify_emby_commands.py` - Verifies Emby API integration by testing real API calls
-
-Run the verification script to ensure everything is working correctly:
-
-```bash
-python verify_emby_commands.py
-```
