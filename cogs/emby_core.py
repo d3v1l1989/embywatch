@@ -429,7 +429,18 @@ class EmbyCore(commands.Cog):
                     self.logger.debug(f"Retrieved Emby system info: {system_info.get('ServerName')}")
                 
                 # Get sessions
-                sessions = await self.get_sessions()
+                sessions_response_json = None
+                async with session.get(f"{self.EMBY_URL}/Sessions", headers=headers) as sessions_response:
+                    if sessions_response.status == 200:
+                        sessions_response_json = await sessions_response.json()
+                        if not isinstance(sessions_response_json, list):
+                            self.logger.error(f"Sessions endpoint did not return a list: {type(sessions_response_json)}")
+                            sessions_response_json = None # Treat as error
+                        else:
+                            self.logger.debug(f"Retrieved {len(sessions_response_json)} session items from Emby.")
+                    else:
+                        self.logger.error(f"Failed to get sessions: HTTP {sessions_response.status} - {await sessions_response.text()}")
+                sessions = sessions_response_json # sessions will be None if there was an error or not a list
                 current_streams = len([s for s in sessions if s.get("NowPlayingItem")]) if sessions else 0
 
                 # Get library stats

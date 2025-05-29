@@ -59,7 +59,8 @@ def is_authorized(interaction: discord.Interaction) -> bool:
 async def load_cogs() -> None:
     """Load all Python files in the 'cogs' directory as bot extensions."""
     for filename in os.listdir("./cogs"):
-        if filename.endswith(".py") and not filename.startswith("__"):
+        if filename.endswith(".py") and not filename.startswith("__") and filename != "jellyfin_core.py":
+
             try:
                 await bot.load_extension(f"cogs.{filename[:-3]}")
                 bot_logger.info(f"Loaded cog: {filename[:-3]}")
