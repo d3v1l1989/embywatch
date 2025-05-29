@@ -1,5 +1,4 @@
 discord.py
-jellyfin-api-client
 requests
 aiohttp
 python-dateutil
