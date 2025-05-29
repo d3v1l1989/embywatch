@@ -801,9 +801,11 @@ class EmbyCore(commands.Cog):
         
         # Set footer with EmbyWatch branding and timestamp
         current_time = datetime.now().strftime("%H:%M:%S")
+        # Use footer icon from config if available, otherwise use default
+        footer_icon = self.config.get("dashboard", {}).get("footer_icon_url", EMBY_LOGO_SMALL)
         embed.set_footer(
             text=f"Powered by EmbyWatch | Last updated at {current_time}",
-            icon_url=EMBY_LOGO_SMALL
+            icon_url=footer_icon
         )
         
         return embed
